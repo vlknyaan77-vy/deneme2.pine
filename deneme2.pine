@@ -944,24 +944,6 @@ if show_table and barstate.islast
         table.cell(info_tab, cur_col, 5, extra_layer_conn_2, bgcolor=color.new(color.gray, 90), text_color=c_txt)
         table.cell(info_tab, cur_col, 6, "Aktif", bgcolor=color.new(color.green, 70), text_color=c_txt)
 
-// --- CROSSOVER TABLE ---
-if enable_cr and barstate.islast
-    cpos = cr_table_pos == "Top Right" ? position.top_right : cr_table_pos == "Bottom Right" ? position.bottom_right : cr_table_pos == "Top Left" ? position.top_left : cr_table_pos == "Bottom Left" ? position.bottom_left : position.middle_right
-    var table cr_tab = table.new(cpos, 4, 7, border_width=1, border_color=color.gray, frame_width=1, frame_color=color.gray)
-    c_bg = color.new(color.black, 40), c_txt = color.white
-
-    table.cell(cr_tab, 0, 0, "TF", bgcolor=c_bg, text_color=color.yellow)
-    table.cell(cr_tab, 1, 0, "Katman", bgcolor=c_bg, text_color=color.yellow)
-    table.cell(cr_tab, 2, 0, "Yön", bgcolor=c_bg, text_color=color.yellow)
-    table.cell(cr_tab, 3, 0, "Bar Önce", bgcolor=c_bg, text_color=color.yellow)
-
-    f_fill_cr_row(cr_tab, 1, "1m P", m1_1m_p_idx, m1_1m_p_dir, m1_1m_p_bar)
-    f_fill_cr_row(cr_tab, 2, "1m V", m1_1m_v_idx, m1_1m_v_dir, m1_1m_v_bar)
-    f_fill_cr_row(cr_tab, 3, "3m P", m1_3m_p_idx, m1_3m_p_dir, m1_3m_p_bar)
-    f_fill_cr_row(cr_tab, 4, "3m V", m1_3m_v_idx, m1_3m_v_dir, m1_3m_v_bar)
-    f_fill_cr_row(cr_tab, 5, "5m P", m1_5m_p_idx, m1_5m_p_dir, m1_5m_p_bar)
-    f_fill_cr_row(cr_tab, 6, "5m V", m1_5m_v_idx, m1_5m_v_dir, m1_5m_v_bar)
-
 // --- CROSSOVER SCANNING EXECUTION ---
 var float m1_1m_p_idx = 0.0, var float m1_1m_p_dir = 0.0, var float m1_1m_p_bar = 0.0
 var float m1_1m_v_idx = 0.0, var float m1_1m_v_dir = 0.0, var float m1_1m_v_bar = 0.0
@@ -984,6 +966,24 @@ if enable_cr
     [i5_p, d5_p, b5_p, i5_v, d5_v, b5_v] = request.security(syminfo.tickerid, "5", f_m1_crossover_scanner())
     m1_5m_p_idx := i5_p, m1_5m_p_dir := d5_p, m1_5m_p_bar := b5_p
     m1_5m_v_idx := i5_v, m1_5m_v_dir := d5_v, m1_5m_v_bar := b5_v
+
+// --- CROSSOVER TABLE ---
+if enable_cr and barstate.islast
+    cpos = cr_table_pos == "Top Right" ? position.top_right : cr_table_pos == "Bottom Right" ? position.bottom_right : cr_table_pos == "Top Left" ? position.top_left : cr_table_pos == "Bottom Left" ? position.bottom_left : position.middle_right
+    var table cr_tab = table.new(cpos, 4, 7, border_width=1, border_color=color.gray, frame_width=1, frame_color=color.gray)
+    c_bg = color.new(color.black, 40), c_txt = color.white
+
+    table.cell(cr_tab, 0, 0, "TF", bgcolor=c_bg, text_color=color.yellow)
+    table.cell(cr_tab, 1, 0, "Katman", bgcolor=c_bg, text_color=color.yellow)
+    table.cell(cr_tab, 2, 0, "Yön", bgcolor=c_bg, text_color=color.yellow)
+    table.cell(cr_tab, 3, 0, "Bar Önce", bgcolor=c_bg, text_color=color.yellow)
+
+    f_fill_cr_row(cr_tab, 1, "1m P", m1_1m_p_idx, m1_1m_p_dir, m1_1m_p_bar)
+    f_fill_cr_row(cr_tab, 2, "1m V", m1_1m_v_idx, m1_1m_v_dir, m1_1m_v_bar)
+    f_fill_cr_row(cr_tab, 3, "3m P", m1_3m_p_idx, m1_3m_p_dir, m1_3m_p_bar)
+    f_fill_cr_row(cr_tab, 4, "3m V", m1_3m_v_idx, m1_3m_v_dir, m1_3m_v_bar)
+    f_fill_cr_row(cr_tab, 5, "5m P", m1_5m_p_idx, m1_5m_p_dir, m1_5m_p_bar)
+    f_fill_cr_row(cr_tab, 6, "5m V", m1_5m_v_idx, m1_5m_v_dir, m1_5m_v_bar)
 
 // --- CROSSOVER VISUALIZATION (LINES) ---
 if enable_cr and show_cr_lines
