@@ -236,17 +236,17 @@ f_m1_crossover_scanner() =>
     var float last_v_idx = 0.0, var float last_v_dir = 0.0, var int last_v_bar = 0
 
     if p_cr_idx > 0
-        last_p_idx := p_cr_idx, last_p_dir := p_cr_dir, last_p_bar := time
+        last_p_idx := p_cr_idx, last_p_dir := p_cr_dir, last_p_bar := bar_index
     if v_cr_idx > 0
-        last_v_idx := v_cr_idx, last_v_dir := v_cr_dir, last_v_bar := time
+        last_v_idx := v_cr_idx, last_v_dir := v_cr_dir, last_v_bar := bar_index
 
-    [last_p_idx, last_p_dir, float(last_p_bar), last_v_idx, last_v_dir, float(last_v_bar)]
+    [last_p_idx, last_p_dir, float(last_p_bar), last_v_idx, last_v_dir, float(last_v_bar), float(bar_index)]
 
-f_fill_cr_row(table t, int r, string tf_str, float idx, float dir, float b_time) =>
+f_fill_cr_row(table t, int r, string tf_str, float idx, float dir, float b_idx, float cur_idx) =>
     table.cell(t, 0, r, tf_str, bgcolor=color.new(color.gray, 80), text_color=color.white)
     if idx > 0
-        // Estimate bars ago based on time difference and chart timeframe
-        b_ago = math.max(0, int(math.floor((time - int(b_time)) / (timeframe.in_seconds() * 1000))))
+        // Calculate bars ago based on native timeframe indices
+        b_ago = int(cur_idx - b_idx)
         table.cell(t, 1, r, "L" + str.tostring(idx, "#"), bgcolor=color.new(color.gray, 90), text_color=color.white)
         table.cell(t, 2, r, dir > 0 ? "↓" : "↑", bgcolor=color.new(color.gray, 90), text_color=dir > 0 ? color.red : color.green)
         table.cell(t, 3, r, str.tostring(b_ago), bgcolor=color.new(color.gray, 90), text_color=color.white)
@@ -947,25 +947,31 @@ if show_table and barstate.islast
 // --- CROSSOVER SCANNING EXECUTION ---
 var float m1_1m_p_idx = 0.0, var float m1_1m_p_dir = 0.0, var float m1_1m_p_bar = 0.0
 var float m1_1m_v_idx = 0.0, var float m1_1m_v_dir = 0.0, var float m1_1m_v_bar = 0.0
+var float m1_1m_cur_idx = 0.0
 
 var float m1_3m_p_idx = 0.0, var float m1_3m_p_dir = 0.0, var float m1_3m_p_bar = 0.0
 var float m1_3m_v_idx = 0.0, var float m1_3m_v_dir = 0.0, var float m1_3m_v_bar = 0.0
+var float m1_3m_cur_idx = 0.0
 
 var float m1_5m_p_idx = 0.0, var float m1_5m_p_dir = 0.0, var float m1_5m_p_bar = 0.0
 var float m1_5m_v_idx = 0.0, var float m1_5m_v_dir = 0.0, var float m1_5m_v_bar = 0.0
+var float m1_5m_cur_idx = 0.0
 
 if enable_cr
-    [i1_p, d1_p, b1_p, i1_v, d1_v, b1_v] = request.security(syminfo.tickerid, "1", f_m1_crossover_scanner())
+    [i1_p, d1_p, b1_p, i1_v, d1_v, b1_v, c1] = request.security(syminfo.tickerid, "1", f_m1_crossover_scanner())
     m1_1m_p_idx := i1_p, m1_1m_p_dir := d1_p, m1_1m_p_bar := b1_p
     m1_1m_v_idx := i1_v, m1_1m_v_dir := d1_v, m1_1m_v_bar := b1_v
+    m1_1m_cur_idx := c1
 
-    [i3_p, d3_p, b3_p, i3_v, d3_v, b3_v] = request.security(syminfo.tickerid, "3", f_m1_crossover_scanner())
+    [i3_p, d3_p, b3_p, i3_v, d3_v, b3_v, c3] = request.security(syminfo.tickerid, "3", f_m1_crossover_scanner())
     m1_3m_p_idx := i3_p, m1_3m_p_dir := d3_p, m1_3m_p_bar := b3_p
     m1_3m_v_idx := i3_v, m1_3m_v_dir := d3_v, m1_3m_v_bar := b3_v
+    m1_3m_cur_idx := c3
 
-    [i5_p, d5_p, b5_p, i5_v, d5_v, b5_v] = request.security(syminfo.tickerid, "5", f_m1_crossover_scanner())
+    [i5_p, d5_p, b5_p, i5_v, d5_v, b5_v, c5] = request.security(syminfo.tickerid, "5", f_m1_crossover_scanner())
     m1_5m_p_idx := i5_p, m1_5m_p_dir := d5_p, m1_5m_p_bar := b5_p
     m1_5m_v_idx := i5_v, m1_5m_v_dir := d5_v, m1_5m_v_bar := b5_v
+    m1_5m_cur_idx := c5
 
 // --- CROSSOVER TABLE ---
 if enable_cr and barstate.islast
@@ -978,12 +984,12 @@ if enable_cr and barstate.islast
     table.cell(cr_tab, 2, 0, "Yön", bgcolor=c_bg, text_color=color.yellow)
     table.cell(cr_tab, 3, 0, "Bar Önce", bgcolor=c_bg, text_color=color.yellow)
 
-    f_fill_cr_row(cr_tab, 1, "1m P", m1_1m_p_idx, m1_1m_p_dir, m1_1m_p_bar)
-    f_fill_cr_row(cr_tab, 2, "1m V", m1_1m_v_idx, m1_1m_v_dir, m1_1m_v_bar)
-    f_fill_cr_row(cr_tab, 3, "3m P", m1_3m_p_idx, m1_3m_p_dir, m1_3m_p_bar)
-    f_fill_cr_row(cr_tab, 4, "3m V", m1_3m_v_idx, m1_3m_v_dir, m1_3m_v_bar)
-    f_fill_cr_row(cr_tab, 5, "5m P", m1_5m_p_idx, m1_5m_p_dir, m1_5m_p_bar)
-    f_fill_cr_row(cr_tab, 6, "5m V", m1_5m_v_idx, m1_5m_v_dir, m1_5m_v_bar)
+    f_fill_cr_row(cr_tab, 1, "1m P", m1_1m_p_idx, m1_1m_p_dir, m1_1m_p_bar, m1_1m_cur_idx)
+    f_fill_cr_row(cr_tab, 2, "1m V", m1_1m_v_idx, m1_1m_v_dir, m1_1m_v_bar, m1_1m_cur_idx)
+    f_fill_cr_row(cr_tab, 3, "3m P", m1_3m_p_idx, m1_3m_p_dir, m1_3m_p_bar, m1_3m_cur_idx)
+    f_fill_cr_row(cr_tab, 4, "3m V", m1_3m_v_idx, m1_3m_v_dir, m1_3m_v_bar, m1_3m_cur_idx)
+    f_fill_cr_row(cr_tab, 5, "5m P", m1_5m_p_idx, m1_5m_p_dir, m1_5m_p_bar, m1_5m_cur_idx)
+    f_fill_cr_row(cr_tab, 6, "5m V", m1_5m_v_idx, m1_5m_v_dir, m1_5m_v_bar, m1_5m_cur_idx)
 
 // --- CROSSOVER VISUALIZATION (ARROWS) ---
 bool cr_up_signal   = false
@@ -994,40 +1000,23 @@ if enable_cr and show_cr_arrows
     // dir > 0 (crossing up) -> down arrow
     // dir < 0 (crossing down) -> up arrow
 
-    new_1m_p = ta.change(m1_1m_p_bar) != 0, new_1m_v = ta.change(m1_1m_v_bar) != 0
-    new_3m_p = ta.change(m1_3m_p_bar) != 0, new_3m_v = ta.change(m1_3m_v_bar) != 0
-    new_5m_p = ta.change(m1_5m_p_bar) != 0, new_5m_v = ta.change(m1_5m_v_bar) != 0
+    if timeframe.period == "1"
+        if ta.change(m1_1m_p_bar) != 0
+            if m1_1m_p_dir > 0 then cr_down_signal := true else cr_up_signal := true
+        if ta.change(m1_1m_v_bar) != 0
+            if m1_1m_v_dir > 0 then cr_down_signal := true else cr_up_signal := true
 
-    if new_1m_p
-        if m1_1m_p_dir > 0
-            cr_down_signal := true
-        else
-            cr_up_signal := true
-    if new_1m_v
-        if m1_1m_v_dir > 0
-            cr_down_signal := true
-        else
-            cr_up_signal := true
-    if new_3m_p
-        if m1_3m_p_dir > 0
-            cr_down_signal := true
-        else
-            cr_up_signal := true
-    if new_3m_v
-        if m1_3m_v_dir > 0
-            cr_down_signal := true
-        else
-            cr_up_signal := true
-    if new_5m_p
-        if m1_5m_p_dir > 0
-            cr_down_signal := true
-        else
-            cr_up_signal := true
-    if new_5m_v
-        if m1_5m_v_dir > 0
-            cr_down_signal := true
-        else
-            cr_up_signal := true
+    if timeframe.period == "3"
+        if ta.change(m1_3m_p_bar) != 0
+            if m1_3m_p_dir > 0 then cr_down_signal := true else cr_up_signal := true
+        if ta.change(m1_3m_v_bar) != 0
+            if m1_3m_v_dir > 0 then cr_down_signal := true else cr_up_signal := true
+
+    if timeframe.period == "5"
+        if ta.change(m1_5m_p_bar) != 0
+            if m1_5m_p_dir > 0 then cr_down_signal := true else cr_up_signal := true
+        if ta.change(m1_5m_v_bar) != 0
+            if m1_5m_v_dir > 0 then cr_down_signal := true else cr_up_signal := true
 
 is_allowed_tf = (timeframe.period == "1") or (timeframe.period == "3") or (timeframe.period == "5")
 plotshape(cr_up_signal and is_allowed_tf, "Kırılım Yukarı (Dip)", shape.triangleup, location.belowbar, color.green, size=size.small)
