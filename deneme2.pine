@@ -637,12 +637,18 @@ if barstate.islast
                         array.push(cr_labels, label.new(j, v0, text="↑", style=label.style_label_up, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
             pv0 := v0, pv1 := v1, pv2 := v2, pv3 := v3, pv4 := v4, pv5 := v5
 
-        if array.size(pts0) > 1 then array.push(p_pl, polyline.new(pts0, line_color=m1_c_y, line_width=filt_width))
-        if array.size(pts1) > 1 then array.push(p_pl, polyline.new(pts1, line_color=m1_c_r, line_width=filt_width))
-        if array.size(pts2) > 1 then array.push(p_pl, polyline.new(pts2, line_color=m1_c_r, line_width=filt_width))
-        if array.size(pts3) > 1 then array.push(p_pl, polyline.new(pts3, line_color=m1_c_r, line_width=filt_width))
-        if array.size(pts4) > 1 then array.push(p_pl, polyline.new(pts4, line_color=m1_c_r, line_width=filt_width))
-        if array.size(pts5) > 1 then array.push(p_pl, polyline.new(pts5, line_color=m1_c_r, line_width=filt_width))
+        if array.size(pts0) > 1
+            array.push(p_pl, polyline.new(pts0, line_color=m1_c_y, line_width=filt_width))
+        if array.size(pts1) > 1
+            array.push(p_pl, polyline.new(pts1, line_color=m1_c_r, line_width=filt_width))
+        if array.size(pts2) > 1
+            array.push(p_pl, polyline.new(pts2, line_color=m1_c_r, line_width=filt_width))
+        if array.size(pts3) > 1
+            array.push(p_pl, polyline.new(pts3, line_color=m1_c_r, line_width=filt_width))
+        if array.size(pts4) > 1
+            array.push(p_pl, polyline.new(pts4, line_color=m1_c_r, line_width=filt_width))
+        if array.size(pts5) > 1
+            array.push(p_pl, polyline.new(pts5, line_color=m1_c_r, line_width=filt_width))
 
     if show_m1 and show_valley and not na(v_idx_u)
         int s_idx = math.max(bar_index - 4990, v_idx_u)
@@ -663,7 +669,8 @@ if barstate.islast
             v4 := f4.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex4_1[off] * v_gamma_ex4_1, st, is_start)
             v5 := f5.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex5_1[off] * v_gamma_ex5_1, st, is_start)
 
-            if not na(pv0) and math.abs(pv0 - v0) > (syminfo.mintick / 10) then array.push(pts0, chart.point.from_index(j, pv0))
+            if not na(pv0) and math.abs(pv0 - v0) > (syminfo.mintick / 10)
+                array.push(pts0, chart.point.from_index(j, pv0))
             array.push(pts0, chart.point.from_index(j, v0))
 
             if not na(v_gamma_ex_1) and not na(cur_sz_unit_ex_1)
@@ -715,12 +722,18 @@ if barstate.islast
                         array.push(cr_labels, label.new(j, v0, text="↑", style=label.style_label_up, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
             pv0 := v0, pv1 := v1, pv2 := v2, pv3 := v3, pv4 := v4, pv5 := v5
 
-        if array.size(pts0) > 1 then array.push(v_pl, polyline.new(pts0, line_color=m1_c_y, line_width=filt_width))
-        if array.size(pts1) > 1 then array.push(v_pl, polyline.new(pts1, line_color=m1_c_g, line_width=filt_width))
-        if array.size(pts2) > 1 then array.push(v_pl, polyline.new(pts2, line_color=m1_c_g, line_width=filt_width))
-        if array.size(pts3) > 1 then array.push(v_pl, polyline.new(pts3, line_color=m1_c_g, line_width=filt_width))
-        if array.size(pts4) > 1 then array.push(v_pl, polyline.new(pts4, line_color=m1_c_g, line_width=filt_width))
-        if array.size(pts5) > 1 then array.push(v_pl, polyline.new(pts5, line_color=m1_c_g, line_width=filt_width))
+        if array.size(pts0) > 1
+            array.push(v_pl, polyline.new(pts0, line_color=m1_c_y, line_width=filt_width))
+        if array.size(pts1) > 1
+            array.push(v_pl, polyline.new(pts1, line_color=m1_c_g, line_width=filt_width))
+        if array.size(pts2) > 1
+            array.push(v_pl, polyline.new(pts2, line_color=m1_c_g, line_width=filt_width))
+        if array.size(pts3) > 1
+            array.push(v_pl, polyline.new(pts3, line_color=m1_c_g, line_width=filt_width))
+        if array.size(pts4) > 1
+            array.push(v_pl, polyline.new(pts4, line_color=m1_c_g, line_width=filt_width))
+        if array.size(pts5) > 1
+            array.push(v_pl, polyline.new(pts5, line_color=m1_c_g, line_width=filt_width))
 
     // --- DRAW ENGINE 2 ---
     if show_m2 and show_peak and not na(p_idx_u)
