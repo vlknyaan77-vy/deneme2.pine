@@ -138,6 +138,22 @@ float atr_per_ex3_1 = not na(atr_mult_ex3_1) ? math.min(4990.0, (timeframe.in_se
 float cur_sz_unit_ex3_1_raw = f_kama_atr(tr, nz(atr_per_ex3_1, 8.1))
 float cur_sz_unit_ex3_1 = is_in_range and not na(atr_per_ex3_1) ? cur_sz_unit_ex3_1_raw : na
 
+// Motor 1: 4th Extra Peak Parameters
+float atr_mult_ex4_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 10000.0 : atr_mult
+if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex4_1 > 3141.5926535897932 + 1.0)
+    atr_mult_ex4_1 := na
+float atr_per_ex4_1 = not na(atr_mult_ex4_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex4_1) : na
+float cur_sz_unit_ex4_1_raw = f_kama_atr(tr, nz(atr_per_ex4_1, 8.1))
+float cur_sz_unit_ex4_1 = is_in_range and not na(atr_per_ex4_1) ? cur_sz_unit_ex4_1_raw : na
+
+// Motor 1: 5th Extra Peak Parameters
+float atr_mult_ex5_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 100000.0 : atr_mult
+if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex5_1 > 3141.5926535897932 + 1.0)
+    atr_mult_ex5_1 := na
+float atr_per_ex5_1 = not na(atr_mult_ex5_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex5_1) : na
+float cur_sz_unit_ex5_1_raw = f_kama_atr(tr, nz(atr_per_ex5_1, 8.1))
+float cur_sz_unit_ex5_1 = is_in_range and not na(atr_per_ex5_1) ? cur_sz_unit_ex5_1_raw : na
+
 float p_gamma_ex_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 1.5707963267948966 : p_gamma_val
 if extra_layer_conn == "Gamma" and (p_gamma_ex_1 > 141.3716694115407 + 0.1)
     p_gamma_ex_1 := na
@@ -147,6 +163,12 @@ if extra_layer_conn == "Gamma" and (p_gamma_ex2_1 > 141.3716694115407 + 0.1)
 float p_gamma_ex3_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 4.71238898038469 : p_gamma_val
 if extra_layer_conn == "Gamma" and (p_gamma_ex3_1 > 141.3716694115407 + 0.1)
     p_gamma_ex3_1 := na
+float p_gamma_ex4_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 6.283185307179586 : p_gamma_val
+if extra_layer_conn == "Gamma" and (p_gamma_ex4_1 > 141.3716694115407 + 0.1)
+    p_gamma_ex4_1 := na
+float p_gamma_ex5_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 7.853981633974483 : p_gamma_val
+if extra_layer_conn == "Gamma" and (p_gamma_ex5_1 > 141.3716694115407 + 0.1)
+    p_gamma_ex5_1 := na
 float v_gamma_ex_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 1.5707963267948966 : v_gamma_val
 if extra_layer_conn == "Gamma" and (v_gamma_ex_1 > 141.3716694115407 + 0.1)
     v_gamma_ex_1 := na
@@ -156,6 +178,12 @@ if extra_layer_conn == "Gamma" and (v_gamma_ex2_1 > 141.3716694115407 + 0.1)
 float v_gamma_ex3_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 4.71238898038469 : v_gamma_val
 if extra_layer_conn == "Gamma" and (v_gamma_ex3_1 > 141.3716694115407 + 0.1)
     v_gamma_ex3_1 := na
+float v_gamma_ex4_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 6.283185307179586 : v_gamma_val
+if extra_layer_conn == "Gamma" and (v_gamma_ex4_1 > 141.3716694115407 + 0.1)
+    v_gamma_ex4_1 := na
+float v_gamma_ex5_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 7.853981633974483 : v_gamma_val
+if extra_layer_conn == "Gamma" and (v_gamma_ex5_1 > 141.3716694115407 + 0.1)
+    v_gamma_ex5_1 := na
 
 // Engine 2 Parameters
 float atr_per_2 = math.min(4990.0, auto_atr ? (timeframe.in_seconds() / 60.0) * atr_mult_2 : atr_opt)
@@ -170,12 +198,69 @@ float atr_per_ex_2 = not na(atr_mult_ex_2) ? math.min(4990.0, (timeframe.in_seco
 float cur_sz_unit_ex_2_raw = f_kama_atr(tr, nz(atr_per_ex_2, 8.1))
 float cur_sz_unit_ex_2 = is_in_range and not na(atr_per_ex_2) ? cur_sz_unit_ex_2_raw : na
 
+// Motor 2: 2nd Extra Parameters
+float atr_mult_ex2_2 = extra_layer_conn_2 == "ATR Çarpanı" ? atr_mult_2 * 100.0 : atr_mult_2
+if extra_layer_conn_2 == "ATR Çarpanı" and (atr_mult_ex2_2 > 3141.5926535897932 + 1.0)
+    atr_mult_ex2_2 := na
+float atr_per_ex2_2 = not na(atr_mult_ex2_2) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex2_2) : na
+float cur_sz_unit_ex2_2_raw = f_kama_atr(tr, nz(atr_per_ex2_2, 8.1))
+float cur_sz_unit_ex2_2 = is_in_range and not na(atr_per_ex2_2) ? cur_sz_unit_ex2_2_raw : na
+
+// Motor 2: 3rd Extra Parameters
+float atr_mult_ex3_2 = extra_layer_conn_2 == "ATR Çarpanı" ? atr_mult_2 * 1000.0 : atr_mult_2
+if extra_layer_conn_2 == "ATR Çarpanı" and (atr_mult_ex3_2 > 3141.5926535897932 + 1.0)
+    atr_mult_ex3_2 := na
+float atr_per_ex3_2 = not na(atr_mult_ex3_2) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex3_2) : na
+float cur_sz_unit_ex3_2_raw = f_kama_atr(tr, nz(atr_per_ex3_2, 8.1))
+float cur_sz_unit_ex3_2 = is_in_range and not na(atr_per_ex3_2) ? cur_sz_unit_ex3_2_raw : na
+
+// Motor 2: 4th Extra Parameters
+float atr_mult_ex4_2 = extra_layer_conn_2 == "ATR Çarpanı" ? atr_mult_2 * 10000.0 : atr_mult_2
+if extra_layer_conn_2 == "ATR Çarpanı" and (atr_mult_ex4_2 > 3141.5926535897932 + 1.0)
+    atr_mult_ex4_2 := na
+float atr_per_ex4_2 = not na(atr_mult_ex4_2) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex4_2) : na
+float cur_sz_unit_ex4_2_raw = f_kama_atr(tr, nz(atr_per_ex4_2, 8.1))
+float cur_sz_unit_ex4_2 = is_in_range and not na(atr_per_ex4_2) ? cur_sz_unit_ex4_2_raw : na
+
+// Motor 2: 5th Extra Parameters
+float atr_mult_ex5_2 = extra_layer_conn_2 == "ATR Çarpanı" ? atr_mult_2 * 100000.0 : atr_mult_2
+if extra_layer_conn_2 == "ATR Çarpanı" and (atr_mult_ex5_2 > 3141.5926535897932 + 1.0)
+    atr_mult_ex5_2 := na
+float atr_per_ex5_2 = not na(atr_mult_ex5_2) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex5_2) : na
+float cur_sz_unit_ex5_2_raw = f_kama_atr(tr, nz(atr_per_ex5_2, 8.1))
+float cur_sz_unit_ex5_2 = is_in_range and not na(atr_per_ex5_2) ? cur_sz_unit_ex5_2_raw : na
+
 float p_gamma_ex_2 = extra_layer_conn_2 == "Gamma" ? p_gamma_val_2 + 1.5707963267948966 : p_gamma_val_2
 if extra_layer_conn_2 == "Gamma" and (p_gamma_ex_2 > 141.3716694115407 + 0.1)
     p_gamma_ex_2 := na
+float p_gamma_ex2_2 = extra_layer_conn_2 == "Gamma" ? p_gamma_val_2 + 3.1415926535897932 : p_gamma_val_2
+if extra_layer_conn_2 == "Gamma" and (p_gamma_ex2_2 > 141.3716694115407 + 0.1)
+    p_gamma_ex2_2 := na
+float p_gamma_ex3_2 = extra_layer_conn_2 == "Gamma" ? p_gamma_val_2 + 4.71238898038469 : p_gamma_val_2
+if extra_layer_conn_2 == "Gamma" and (p_gamma_ex3_2 > 141.3716694115407 + 0.1)
+    p_gamma_ex3_2 := na
+float p_gamma_ex4_2 = extra_layer_conn_2 == "Gamma" ? p_gamma_val_2 + 6.283185307179586 : p_gamma_val_2
+if extra_layer_conn_2 == "Gamma" and (p_gamma_ex4_2 > 141.3716694115407 + 0.1)
+    p_gamma_ex4_2 := na
+float p_gamma_ex5_2 = extra_layer_conn_2 == "Gamma" ? p_gamma_val_2 + 7.853981633974483 : p_gamma_val_2
+if extra_layer_conn_2 == "Gamma" and (p_gamma_ex5_2 > 141.3716694115407 + 0.1)
+    p_gamma_ex5_2 := na
+
 float v_gamma_ex_2 = extra_layer_conn_2 == "Gamma" ? v_gamma_val_2 + 1.5707963267948966 : v_gamma_val_2
 if extra_layer_conn_2 == "Gamma" and (v_gamma_ex_2 > 141.3716694115407 + 0.1)
     v_gamma_ex_2 := na
+float v_gamma_ex2_2 = extra_layer_conn_2 == "Gamma" ? v_gamma_val_2 + 3.1415926535897932 : v_gamma_val_2
+if extra_layer_conn_2 == "Gamma" and (v_gamma_ex2_2 > 141.3716694115407 + 0.1)
+    v_gamma_ex2_2 := na
+float v_gamma_ex3_2 = extra_layer_conn_2 == "Gamma" ? v_gamma_val_2 + 4.71238898038469 : v_gamma_val_2
+if extra_layer_conn_2 == "Gamma" and (v_gamma_ex3_2 > 141.3716694115407 + 0.1)
+    v_gamma_ex3_2 := na
+float v_gamma_ex4_2 = extra_layer_conn_2 == "Gamma" ? v_gamma_val_2 + 6.283185307179586 : v_gamma_val_2
+if extra_layer_conn_2 == "Gamma" and (v_gamma_ex4_2 > 141.3716694115407 + 0.1)
+    v_gamma_ex4_2 := na
+float v_gamma_ex5_2 = extra_layer_conn_2 == "Gamma" ? v_gamma_val_2 + 7.853981633974483 : v_gamma_val_2
+if extra_layer_conn_2 == "Gamma" and (v_gamma_ex5_2 > 141.3716694115407 + 0.1)
+    v_gamma_ex5_2 := na
 
 max_bars_back(cur_sz_unit_1, 5000)
 max_bars_back(cur_sz_unit_ex_1, 5000)
@@ -184,8 +269,14 @@ float cur_sz_unit_ex2_v1_raw = f_kama_atr(tr, nz(atr_per_ex2_1, 8.1))
 float cur_sz_unit_ex2_v1 = is_in_range and not na(atr_per_ex2_1) ? cur_sz_unit_ex2_v1_raw : na
 max_bars_back(cur_sz_unit_ex2_v1, 5000)
 max_bars_back(cur_sz_unit_ex3_1, 5000)
+max_bars_back(cur_sz_unit_ex4_1, 5000)
+max_bars_back(cur_sz_unit_ex5_1, 5000)
 max_bars_back(cur_sz_unit_2, 5000)
 max_bars_back(cur_sz_unit_ex_2, 5000)
+max_bars_back(cur_sz_unit_ex2_2, 5000)
+max_bars_back(cur_sz_unit_ex3_2, 5000)
+max_bars_back(cur_sz_unit_ex4_2, 5000)
+max_bars_back(cur_sz_unit_ex5_2, 5000)
 max_bars_back(high, 5000)
 max_bars_back(low, 5000)
 max_bars_back(close, 5000)
@@ -338,6 +429,34 @@ if barstate.islast
                 pfe3 := cfe3
             if array.size(ptse3) > 1
                 array.push(p_pl, polyline.new(ptse3, line_color=color.red, line_width=filt_width))
+        // 4th Extra (Motor 1 Only)
+        if not na(p_gamma_ex4_1) and not na(cur_sz_unit_ex4_1)
+            FiltState f_re4 = FiltState.new()
+            chart.point[] ptse4 = array.new<chart.point>(0)
+            float cfe4 = na, float pfe4 = na
+            for j = s_idx to bar_index
+                off = bar_index - j
+                cfe4 := f_re4.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex4_1[off] * p_gamma_ex4_1, st, j == s_idx)
+                if not na(pfe4) and math.abs(pfe4 - cfe4) > (syminfo.mintick / 10)
+                    array.push(ptse4, chart.point.from_index(j, pfe4))
+                array.push(ptse4, chart.point.from_index(j, cfe4))
+                pfe4 := cfe4
+            if array.size(ptse4) > 1
+                array.push(p_pl, polyline.new(ptse4, line_color=color.red, line_width=filt_width))
+        // 5th Extra (Motor 1 Only)
+        if not na(p_gamma_ex5_1) and not na(cur_sz_unit_ex5_1)
+            FiltState f_re5 = FiltState.new()
+            chart.point[] ptse5 = array.new<chart.point>(0)
+            float cfe5 = na, float pfe5 = na
+            for j = s_idx to bar_index
+                off = bar_index - j
+                cfe5 := f_re5.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex5_1[off] * p_gamma_ex5_1, st, j == s_idx)
+                if not na(pfe5) and math.abs(pfe5 - cfe5) > (syminfo.mintick / 10)
+                    array.push(ptse5, chart.point.from_index(j, pfe5))
+                array.push(ptse5, chart.point.from_index(j, cfe5))
+                pfe5 := cfe5
+            if array.size(ptse5) > 1
+                array.push(p_pl, polyline.new(ptse5, line_color=color.red, line_width=filt_width))
 
     if show_m1 and show_valley and not na(v_idx_u)
         // Main
@@ -397,6 +516,34 @@ if barstate.islast
                 pfe3 := cfe3
             if array.size(ptse3) > 1
                 array.push(v_pl, polyline.new(ptse3, line_color=color.green, line_width=filt_width))
+        // 4th Extra (Motor 1 Only)
+        if not na(v_gamma_ex4_1) and not na(cur_sz_unit_ex4_1)
+            FiltState f_re4 = FiltState.new()
+            chart.point[] ptse4 = array.new<chart.point>(0)
+            float cfe4 = na, float pfe4 = na
+            for j = s_idx to bar_index
+                off = bar_index - j
+                cfe4 := f_re4.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex4_1[off] * v_gamma_ex4_1, st, j == s_idx)
+                if not na(pfe4) and math.abs(pfe4 - cfe4) > (syminfo.mintick / 10)
+                    array.push(ptse4, chart.point.from_index(j, pfe4))
+                array.push(ptse4, chart.point.from_index(j, cfe4))
+                pfe4 := cfe4
+            if array.size(ptse4) > 1
+                array.push(v_pl, polyline.new(ptse4, line_color=color.green, line_width=filt_width))
+        // 5th Extra (Motor 1 Only)
+        if not na(v_gamma_ex5_1) and not na(cur_sz_unit_ex5_1)
+            FiltState f_re5 = FiltState.new()
+            chart.point[] ptse5 = array.new<chart.point>(0)
+            float cfe5 = na, float pfe5 = na
+            for j = s_idx to bar_index
+                off = bar_index - j
+                cfe5 := f_re5.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex5_1[off] * v_gamma_ex5_1, st, j == s_idx)
+                if not na(pfe5) and math.abs(pfe5 - cfe5) > (syminfo.mintick / 10)
+                    array.push(ptse5, chart.point.from_index(j, pfe5))
+                array.push(ptse5, chart.point.from_index(j, cfe5))
+                pfe5 := cfe5
+            if array.size(ptse5) > 1
+                array.push(v_pl, polyline.new(ptse5, line_color=color.green, line_width=filt_width))
 
     // --- DRAW ENGINE 2 ---
     if show_m2 and show_peak and not na(p_idx_u)
@@ -429,6 +576,62 @@ if barstate.islast
                 pfe := cfe
             if array.size(ptse) > 1
                 array.push(p_pl, polyline.new(ptse, line_color=color.red, line_width=filt_width))
+        // 2nd Extra (Motor 2)
+        if not na(p_gamma_ex2_2) and not na(cur_sz_unit_ex2_2)
+            FiltState f_re2 = FiltState.new()
+            chart.point[] ptse2 = array.new<chart.point>(0)
+            float cfe2 = na, float pfe2 = na
+            for j = s_idx to bar_index
+                off = bar_index - j
+                cfe2 := f_re2.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex2_2[off] * p_gamma_ex2_2, st, j == s_idx)
+                if not na(pfe2) and math.abs(pfe2 - cfe2) > (syminfo.mintick / 10)
+                    array.push(ptse2, chart.point.from_index(j, pfe2))
+                array.push(ptse2, chart.point.from_index(j, cfe2))
+                pfe2 := cfe2
+            if array.size(ptse2) > 1
+                array.push(p_pl, polyline.new(ptse2, line_color=color.red, line_width=filt_width))
+        // 3rd Extra (Motor 2)
+        if not na(p_gamma_ex3_2) and not na(cur_sz_unit_ex3_2)
+            FiltState f_re3 = FiltState.new()
+            chart.point[] ptse3 = array.new<chart.point>(0)
+            float cfe3 = na, float pfe3 = na
+            for j = s_idx to bar_index
+                off = bar_index - j
+                cfe3 := f_re3.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex3_2[off] * p_gamma_ex3_2, st, j == s_idx)
+                if not na(pfe3) and math.abs(pfe3 - cfe3) > (syminfo.mintick / 10)
+                    array.push(ptse3, chart.point.from_index(j, pfe3))
+                array.push(ptse3, chart.point.from_index(j, cfe3))
+                pfe3 := cfe3
+            if array.size(ptse3) > 1
+                array.push(p_pl, polyline.new(ptse3, line_color=color.red, line_width=filt_width))
+        // 4th Extra (Motor 2)
+        if not na(p_gamma_ex4_2) and not na(cur_sz_unit_ex4_2)
+            FiltState f_re4 = FiltState.new()
+            chart.point[] ptse4 = array.new<chart.point>(0)
+            float cfe4 = na, float pfe4 = na
+            for j = s_idx to bar_index
+                off = bar_index - j
+                cfe4 := f_re4.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex4_2[off] * p_gamma_ex4_2, st, j == s_idx)
+                if not na(pfe4) and math.abs(pfe4 - cfe4) > (syminfo.mintick / 10)
+                    array.push(ptse4, chart.point.from_index(j, pfe4))
+                array.push(ptse4, chart.point.from_index(j, cfe4))
+                pfe4 := cfe4
+            if array.size(ptse4) > 1
+                array.push(p_pl, polyline.new(ptse4, line_color=color.red, line_width=filt_width))
+        // 5th Extra (Motor 2)
+        if not na(p_gamma_ex5_2) and not na(cur_sz_unit_ex5_2)
+            FiltState f_re5 = FiltState.new()
+            chart.point[] ptse5 = array.new<chart.point>(0)
+            float cfe5 = na, float pfe5 = na
+            for j = s_idx to bar_index
+                off = bar_index - j
+                cfe5 := f_re5.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex5_2[off] * p_gamma_ex5_2, st, j == s_idx)
+                if not na(pfe5) and math.abs(pfe5 - cfe5) > (syminfo.mintick / 10)
+                    array.push(ptse5, chart.point.from_index(j, pfe5))
+                array.push(ptse5, chart.point.from_index(j, cfe5))
+                pfe5 := cfe5
+            if array.size(ptse5) > 1
+                array.push(p_pl, polyline.new(ptse5, line_color=color.red, line_width=filt_width))
 
     if show_m2 and show_valley and not na(v_idx_u)
         // Main
@@ -460,6 +663,62 @@ if barstate.islast
                 pfe := cfe
             if array.size(ptse) > 1
                 array.push(v_pl, polyline.new(ptse, line_color=color.green, line_width=filt_width))
+        // 2nd Extra (Motor 2)
+        if not na(v_gamma_ex2_2) and not na(cur_sz_unit_ex2_2)
+            FiltState f_re2 = FiltState.new()
+            chart.point[] ptse2 = array.new<chart.point>(0)
+            float cfe2 = na, float pfe2 = na
+            for j = s_idx to bar_index
+                off = bar_index - j
+                cfe2 := f_re2.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex2_2[off] * v_gamma_ex2_2, st, j == s_idx)
+                if not na(pfe2) and math.abs(pfe2 - cfe2) > (syminfo.mintick / 10)
+                    array.push(ptse2, chart.point.from_index(j, pfe2))
+                array.push(ptse2, chart.point.from_index(j, cfe2))
+                pfe2 := cfe2
+            if array.size(ptse2) > 1
+                array.push(v_pl, polyline.new(ptse2, line_color=color.green, line_width=filt_width))
+        // 3rd Extra (Motor 2)
+        if not na(v_gamma_ex3_2) and not na(cur_sz_unit_ex3_2)
+            FiltState f_re3 = FiltState.new()
+            chart.point[] ptse3 = array.new<chart.point>(0)
+            float cfe3 = na, float pfe3 = na
+            for j = s_idx to bar_index
+                off = bar_index - j
+                cfe3 := f_re3.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex3_2[off] * v_gamma_ex3_2, st, j == s_idx)
+                if not na(pfe3) and math.abs(pfe3 - cfe3) > (syminfo.mintick / 10)
+                    array.push(ptse3, chart.point.from_index(j, pfe3))
+                array.push(ptse3, chart.point.from_index(j, cfe3))
+                pfe3 := cfe3
+            if array.size(ptse3) > 1
+                array.push(v_pl, polyline.new(ptse3, line_color=color.green, line_width=filt_width))
+        // 4th Extra (Motor 2)
+        if not na(v_gamma_ex4_2) and not na(cur_sz_unit_ex4_2)
+            FiltState f_re4 = FiltState.new()
+            chart.point[] ptse4 = array.new<chart.point>(0)
+            float cfe4 = na, float pfe4 = na
+            for j = s_idx to bar_index
+                off = bar_index - j
+                cfe4 := f_re4.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex4_2[off] * v_gamma_ex4_2, st, j == s_idx)
+                if not na(pfe4) and math.abs(pfe4 - cfe4) > (syminfo.mintick / 10)
+                    array.push(ptse4, chart.point.from_index(j, pfe4))
+                array.push(ptse4, chart.point.from_index(j, cfe4))
+                pfe4 := cfe4
+            if array.size(ptse4) > 1
+                array.push(v_pl, polyline.new(ptse4, line_color=color.green, line_width=filt_width))
+        // 5th Extra (Motor 2)
+        if not na(v_gamma_ex5_2) and not na(cur_sz_unit_ex5_2)
+            FiltState f_re5 = FiltState.new()
+            chart.point[] ptse5 = array.new<chart.point>(0)
+            float cfe5 = na, float pfe5 = na
+            for j = s_idx to bar_index
+                off = bar_index - j
+                cfe5 := f_re5.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex5_2[off] * v_gamma_ex5_2, st, j == s_idx)
+                if not na(pfe5) and math.abs(pfe5 - cfe5) > (syminfo.mintick / 10)
+                    array.push(ptse5, chart.point.from_index(j, pfe5))
+                array.push(ptse5, chart.point.from_index(j, cfe5))
+                pfe5 := cfe5
+            if array.size(ptse5) > 1
+                array.push(v_pl, polyline.new(ptse5, line_color=color.green, line_width=filt_width))
 
 // Table
 if show_table and barstate.islast
