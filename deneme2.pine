@@ -999,20 +999,39 @@ if enable_cr and show_cr_arrows
     new_5m_p = ta.change(m1_5m_p_bar) != 0, new_5m_v = ta.change(m1_5m_v_bar) != 0
 
     if new_1m_p
-        if m1_1m_p_dir > 0 then cr_down_signal := true else cr_up_signal := true
+        if m1_1m_p_dir > 0
+            cr_down_signal := true
+        else
+            cr_up_signal := true
     if new_1m_v
-        if m1_1m_v_dir > 0 then cr_down_signal := true else cr_up_signal := true
+        if m1_1m_v_dir > 0
+            cr_down_signal := true
+        else
+            cr_up_signal := true
     if new_3m_p
-        if m1_3m_p_dir > 0 then cr_down_signal := true else cr_up_signal := true
+        if m1_3m_p_dir > 0
+            cr_down_signal := true
+        else
+            cr_up_signal := true
     if new_3m_v
-        if m1_3m_v_dir > 0 then cr_down_signal := true else cr_up_signal := true
+        if m1_3m_v_dir > 0
+            cr_down_signal := true
+        else
+            cr_up_signal := true
     if new_5m_p
-        if m1_5m_p_dir > 0 then cr_down_signal := true else cr_up_signal := true
+        if m1_5m_p_dir > 0
+            cr_down_signal := true
+        else
+            cr_up_signal := true
     if new_5m_v
-        if m1_5m_v_dir > 0 then cr_down_signal := true else cr_up_signal := true
+        if m1_5m_v_dir > 0
+            cr_down_signal := true
+        else
+            cr_up_signal := true
 
-plotshape(cr_up_signal, "Kırılım Yukarı (Dip)", shape.triangleup, location.belowbar, color.green, size=size.small)
-plotshape(cr_down_signal, "Kırılım Aşağı (Tepe)", shape.triangledown, location.abovebar, color.red, size=size.small)
+is_allowed_tf = (timeframe.period == "1") or (timeframe.period == "3") or (timeframe.period == "5")
+plotshape(cr_up_signal and is_allowed_tf, "Kırılım Yukarı (Dip)", shape.triangleup, location.belowbar, color.green, size=size.small)
+plotshape(cr_down_signal and is_allowed_tf, "Kırılım Aşağı (Tepe)", shape.triangledown, location.abovebar, color.red, size=size.small)
 
 // Labels (Shared)
 var label lp = na, var label lv = na
