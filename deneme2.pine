@@ -7,6 +7,7 @@ string GRP_M1   = "🚀 Motor 1 Ayarları / Engine 1 Settings"
 string GRP_M2   = "🚀 Motor 2 Ayarları / Engine 2 Settings"
 string GRP_VIS  = "🎨 Görsel Ayarlar / Visual Settings"
 string GRP_TAB  = "📊 Tablo Ayarları / Table Settings"
+string GRP_CR   = "🔄 Kırılım Kontrol Motoru / Crossover Engine"
 
 // --- GİRDİLER / INPUTS ---
 lb_mode        = input.string("Manuel", "Tarama Modu / Lookback Mode", options=["Manuel", "Otomatik (Hassasiyet)", "Global (Maksimum)", "Manuel (Tarih Seçimi)"], group=GRP_AUTO)
@@ -42,6 +43,11 @@ filt_width     = input.int(2, "Çizgi Kalınlığı / Line Width", minval=1, max
 
 show_table     = input.bool(true, "Bilgi Tablosunu Göster / Show Info Table", group=GRP_TAB)
 table_pos      = input.string("Top Right", "Tablo Konumu / Table Position", options=["Top Right", "Bottom Right", "Top Left", "Bottom Left", "Middle Right"], group=GRP_TAB)
+
+// --- KIRILIM KONTROL GİRDİLERİ ---
+enable_cr      = input.bool(true, "Kırılım Motorunu Aktifleştir / Enable Crossover Engine", group=GRP_CR)
+show_cr_lines  = input.bool(true, "Kırılım Çizgilerini Göster / Show Crossover Lines", group=GRP_CR)
+cr_table_pos   = input.string("Bottom Left", "Kırılım Tablo Konumu", options=["Top Right", "Bottom Right", "Top Left", "Bottom Left", "Middle Right"], group=GRP_CR)
 
 // --- YARDIMCI FONKSİYONLAR / HELPERS ---
 f_kama_atr(float src, float n) =>
@@ -88,6 +94,154 @@ method upd_filt(FiltState s, float h, float l, float r, float init_val, bool res
         if l + r < s.rfilt
             s.rfilt := l + r
     s.rfilt
+
+f_get_settled_idx(bool is_peak, int lb_mode_idx, int lb_val, float prev_f, float sz_val, int prev_settled, float h_src, float l_src, float c_src, int hb_49, int lb_49, int hb_a, int lb_a) =>
+    int off = lb_mode_idx == 0 ? (is_peak ? hb_49 : lb_49) : (is_peak ? hb_a : lb_a)
+    int raw_ext_idx = bar_index + off
+    int res_idx = prev_settled
+    if na(prev_settled) or (bar_index - prev_settled > lb_val)
+        res_idx := raw_ext_idx
+    else
+        float dist_pct = not na(prev_f) ? math.abs(c_src - prev_f) / prev_f * 100 : na
+        bool prox_reset = not na(dist_pct) and dist_pct <= auto_prox_threshold
+        bool threshold_reset = not na(prev_f) and not na(sz_val) and math.abs(c_src - prev_f) > auto_threshold * sz_val
+        if prox_reset or threshold_reset
+            res_idx := raw_ext_idx
+    res_idx
+
+// --- CROSSOVER CORE LOGIC ---
+f_get_cr_data(float m_val, float ex1, float ex2, float ex3, float ex4, float ex5) =>
+    float res_idx = 0.0 // 1 to 5
+    float res_dir = 0.0 // 1: Up, -1: Down
+
+    // Check for crossovers. main filter (m_val) crosses others.
+    // Divergence check: Previous values must be different to avoid anchor overlap signal
+    bool div1 = nz(m_val[1]) != nz(ex1[1])
+    bool div2 = nz(m_val[1]) != nz(ex2[1])
+    bool div3 = nz(m_val[1]) != nz(ex3[1])
+    bool div4 = nz(m_val[1]) != nz(ex4[1])
+    bool div5 = nz(m_val[1]) != nz(ex5[1])
+
+    if ta.crossunder(m_val, ex5) and div5
+        res_idx := 5.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex5) and div5
+        res_idx := 5.0, res_dir := 1.0
+    else if ta.crossunder(m_val, ex4) and div4
+        res_idx := 4.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex4) and div4
+        res_idx := 4.0, res_dir := 1.0
+    else if ta.crossunder(m_val, ex3) and div3
+        res_idx := 3.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex3) and div3
+        res_idx := 3.0, res_dir := 1.0
+    else if ta.crossunder(m_val, ex2) and div2
+        res_idx := 2.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex2) and div2
+        res_idx := 2.0, res_dir := 1.0
+    else if ta.crossunder(m_val, ex1) and div1
+        res_idx := 1.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex1) and div1
+        res_idx := 1.0, res_dir := 1.0
+
+    [res_idx, res_dir]
+
+f_m1_crossover_scanner() =>
+    // This function replicates Motor 1 logic for scanning
+    // 1. Inputs/Params (using global scope inputs is fine if called within security)
+
+    // 2. Price/TR
+    t_h = high, t_l = low, t_c = close
+    t_tr = ta.tr(true) // Scanning will use standard TR for consistency with Anchor logic
+
+    // 3. Size Units (KAMA ATR)
+    t_atr_per = math.min(4990.0, auto_atr ? (timeframe.in_seconds() / 60.0) * atr_mult : atr_opt)
+    t_unit = f_kama_atr(t_tr, nz(t_atr_per, 8.1))
+
+    t_unit_ex1 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 10.0 : atr_mult)))
+    t_unit_ex2 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 100.0 : atr_mult)))
+    t_unit_ex3 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 1000.0 : atr_mult)))
+    t_unit_ex4 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 10000.0 : atr_mult)))
+    t_unit_ex5 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 100000.0 : atr_mult)))
+
+    // 4. Gamma Params
+    pg = p_gamma_val, vg = v_gamma_val
+    pg_ex1 = extra_layer_conn == "Gamma" ? pg + 1.5707963267948966 : pg
+    pg_ex2 = extra_layer_conn == "Gamma" ? pg + 3.1415926535897932 : pg
+    pg_ex3 = extra_layer_conn == "Gamma" ? pg + 4.71238898038469 : pg
+    pg_ex4 = extra_layer_conn == "Gamma" ? pg + 6.283185307179586 : pg
+    pg_ex5 = extra_layer_conn == "Gamma" ? pg + 7.853981633974483 : pg
+
+    vg_ex1 = extra_layer_conn == "Gamma" ? vg + 1.5707963267948966 : vg
+    vg_ex2 = extra_layer_conn == "Gamma" ? vg + 3.1415926535897932 : vg
+    vg_ex3 = extra_layer_conn == "Gamma" ? vg + 4.71238898038469 : vg
+    vg_ex4 = extra_layer_conn == "Gamma" ? vg + 6.283185307179586 : vg
+    vg_ex5 = extra_layer_conn == "Gamma" ? vg + 7.853981633974483 : vg
+
+    // 5. Anchor Calculation (Standard Prices)
+    int lb_val = lb_mode == "Global (Maksimum)" ? 4990 : lb_mode == "Otomatik (Hassasiyet)" ? lb_sens * 144 : auto_lookback
+    int eff_lb = math.min(math.max(1, lb_val), bar_index + 1)
+
+    // We need to maintain state inside security, so we use var
+    var int s_p_idx = na, var int s_v_idx = na
+    var float l_f_p = na, var float l_f_v = na
+
+    hb_49 = ta.highestbars(t_h, 4990), lb_49 = ta.lowestbars(t_l, 4990)
+    hb_a = ta.highestbars(t_h, eff_lb), lb_a = ta.lowestbars(t_l, eff_lb)
+
+    lb_idx = lb_mode == "Global (Maksimum)" ? 0 : 1
+
+    // Manual calculation of range within security context
+    is_r = (lb_mode == "Global (Maksimum)") or (lb_mode == "Manuel (Tarih Seçimi)") or (timenow - time < (lb_val + 500) * timeframe.in_seconds() * 1000)
+
+    if is_r
+        s_p_idx := lb_mode == "Manuel (Tarih Seçimi)" ? ta.valuewhen(time <= p_time, bar_index, 0) : f_get_settled_idx(true, lb_idx, lb_val, l_f_p, t_unit * pg, s_p_idx, t_h, t_l, t_c, hb_49, lb_49, hb_a, lb_a)
+        s_v_idx := lb_mode == "Manuel (Tarih Seçimi)" ? ta.valuewhen(time <= v_time, bar_index, 0) : f_get_settled_idx(false, lb_idx, lb_val, l_f_v, t_unit * vg, s_v_idx, t_h, t_l, t_c, hb_49, lb_49, hb_a, lb_a)
+
+    // 6. Filter Updates
+    var FiltState fs_p = FiltState.new(), var FiltState fs_v = FiltState.new()
+    var FiltState fs_p1 = FiltState.new(), var FiltState fs_v1 = FiltState.new()
+    var FiltState fs_p2 = FiltState.new(), var FiltState fs_v2 = FiltState.new()
+    var FiltState fs_p3 = FiltState.new(), var FiltState fs_v3 = FiltState.new()
+    var FiltState fs_p4 = FiltState.new(), var FiltState fs_v4 = FiltState.new()
+    var FiltState fs_p5 = FiltState.new(), var FiltState fs_v5 = FiltState.new()
+
+    is_p_anc = (bar_index == s_p_idx) or (ta.change(s_p_idx) != 0)
+    is_v_anc = (bar_index == s_v_idx) or (ta.change(s_v_idx) != 0)
+
+    i_p = t_h[math.max(0, bar_index - nz(s_p_idx, bar_index))]
+    i_v = t_l[math.max(0, bar_index - nz(s_v_idx, bar_index))]
+
+    l_f_p := fs_p.upd_filt(t_h, t_l, t_unit * pg, i_p, is_p_anc)
+    l_f_v := fs_v.upd_filt(t_h, t_l, t_unit * vg, i_v, is_v_anc)
+
+    f_p1 = fs_p1.upd_filt(t_h, t_l, t_unit_ex1 * pg_ex1, i_p, is_p_anc)
+    f_v1 = fs_v1.upd_filt(t_h, t_l, t_unit_ex1 * vg_ex1, i_v, is_v_anc)
+    f_p2 = fs_p2.upd_filt(t_h, t_l, t_unit_ex2 * pg_ex2, i_p, is_p_anc)
+    f_v2 = fs_v2.upd_filt(t_h, t_l, t_unit_ex2 * vg_ex2, i_v, is_v_anc)
+    f_p3 = fs_p3.upd_filt(t_h, t_l, t_unit_ex3 * pg_ex3, i_p, is_p_anc)
+    f_v3 = fs_v3.upd_filt(t_h, t_l, t_unit_ex3 * vg_ex3, i_v, is_v_anc)
+    f_p4 = fs_p4.upd_filt(t_h, t_l, t_unit_ex4 * pg_ex4, i_p, is_p_anc)
+    f_v4 = fs_v4.upd_filt(t_h, t_l, t_unit_ex4 * vg_ex4, i_v, is_v_anc)
+    f_p5 = fs_p5.upd_filt(t_h, t_l, t_unit_ex5 * pg_ex5, i_p, is_p_anc)
+    f_v5 = fs_v5.upd_filt(t_h, t_l, t_unit_ex5 * vg_ex5, i_v, is_v_anc)
+
+    // 7. Detection
+    [p_cr_idx, p_cr_dir] = f_get_cr_data(l_f_p, f_p1, f_p2, f_p3, f_p4, f_p5)
+    [v_cr_idx, v_cr_dir] = f_get_cr_data(l_f_v, f_v1, f_v2, f_v3, f_v4, f_v5)
+
+    // Find how many bars ago the last crossover happened
+    // We'll return the index, direction and some identifier
+    // For simplicity, let's just return the last event data
+    var float last_p_idx = 0.0, var float last_p_dir = 0.0, var int last_p_bar = 0
+    var float last_v_idx = 0.0, var float last_v_dir = 0.0, var int last_v_bar = 0
+
+    if p_cr_idx > 0
+        last_p_idx := p_cr_idx, last_p_dir := p_cr_dir, last_p_bar := time
+    if v_cr_idx > 0
+        last_v_idx := v_cr_idx, last_v_dir := v_cr_dir, last_v_bar := time
+
+    [last_p_idx, last_p_dir, float(last_p_bar), last_v_idx, last_v_dir, float(last_v_bar)]
+
 
 // --- HESAPLAMA AKIŞI / CALCULATION FLOW ---
 // Anchor Prices (Always Standard)
@@ -328,19 +482,6 @@ var int settled_v_idx = na
 var float last_f_p_1 = na
 var float last_f_v_1 = na
 
-f_get_settled_idx(bool is_peak, int lb_mode_idx, int lb_val, float prev_f, float sz_val, int prev_settled, float h_src, float l_src, float c_src, int hb_49, int lb_49, int hb_a, int lb_a) =>
-    int off = lb_mode_idx == 0 ? (is_peak ? hb_49 : lb_49) : (is_peak ? hb_a : lb_a)
-    int raw_ext_idx = bar_index + off
-    int res_idx = prev_settled
-    if na(prev_settled) or (bar_index - prev_settled > lb_val)
-        res_idx := raw_ext_idx
-    else
-        float dist_pct = not na(prev_f) ? math.abs(c_src - prev_f) / prev_f * 100 : na
-        bool prox_reset = not na(dist_pct) and dist_pct <= auto_prox_threshold
-        bool threshold_reset = not na(prev_f) and not na(sz_val) and math.abs(c_src - prev_f) > auto_threshold * sz_val
-        if prox_reset or threshold_reset
-            res_idx := raw_ext_idx
-    res_idx
 
 int lb_mode_idx = lb_mode == "Global (Maksimum)" ? 0 : 1
 if is_in_range
@@ -790,6 +931,71 @@ if show_table and barstate.islast
         table.cell(info_tab, cur_col, 4, str.tostring(atr_per_2, "#.###"), bgcolor=color.new(color.gray, 90), text_color=c_txt)
         table.cell(info_tab, cur_col, 5, extra_layer_conn_2, bgcolor=color.new(color.gray, 90), text_color=c_txt)
         table.cell(info_tab, cur_col, 6, "Aktif", bgcolor=color.new(color.green, 70), text_color=c_txt)
+
+// --- CROSSOVER TABLE ---
+if enable_cr and barstate.islast
+    cpos = cr_table_pos == "Top Right" ? position.top_right : cr_table_pos == "Bottom Right" ? position.bottom_right : cr_table_pos == "Top Left" ? position.top_left : cr_table_pos == "Bottom Left" ? position.bottom_left : position.middle_right
+    var table cr_tab = table.new(cpos, 4, 7, border_width=1, border_color=color.gray, frame_width=1, frame_color=color.gray)
+    c_bg = color.new(color.black, 40), c_txt = color.white
+
+    table.cell(cr_tab, 0, 0, "TF", bgcolor=c_bg, text_color=color.yellow)
+    table.cell(cr_tab, 1, 0, "Katman", bgcolor=c_bg, text_color=color.yellow)
+    table.cell(cr_tab, 2, 0, "Yön", bgcolor=c_bg, text_color=color.yellow)
+    table.cell(cr_tab, 3, 0, "Bar Önce", bgcolor=c_bg, text_color=color.yellow)
+
+    f_fill_cr_row(t, r, tf_str, idx, dir, b_time) =>
+        table.cell(t, 0, r, tf_str, bgcolor=color.new(color.gray, 80), text_color=color.white)
+        if idx > 0
+            // Estimate bars ago based on time difference and chart timeframe
+            // We use math.floor for safer estimation
+            b_ago = math.max(0, int(math.floor((time - int(b_time)) / (timeframe.in_seconds() * 1000))))
+            table.cell(t, 1, r, "L" + str.tostring(idx, "#"), bgcolor=color.new(color.gray, 90), text_color=color.white)
+            table.cell(t, 2, r, dir > 0 ? "↓" : "↑", bgcolor=color.new(color.gray, 90), text_color=dir > 0 ? color.red : color.green)
+            table.cell(t, 3, r, str.tostring(b_ago), bgcolor=color.new(color.gray, 90), text_color=color.white)
+        else
+            table.cell(t, 1, r, "-", bgcolor=color.new(color.gray, 90), text_color=color.gray)
+            table.cell(t, 2, r, "-", bgcolor=color.new(color.gray, 90), text_color=color.gray)
+            table.cell(t, 3, r, "-", bgcolor=color.new(color.gray, 90), text_color=color.gray)
+
+    f_fill_cr_row(cr_tab, 1, "1m P", m1_1m_p_idx, m1_1m_p_dir, m1_1m_p_bar)
+    f_fill_cr_row(cr_tab, 2, "1m V", m1_1m_v_idx, m1_1m_v_dir, m1_1m_v_bar)
+    f_fill_cr_row(cr_tab, 3, "3m P", m1_3m_p_idx, m1_3m_p_dir, m1_3m_p_bar)
+    f_fill_cr_row(cr_tab, 4, "3m V", m1_3m_v_idx, m1_3m_v_dir, m1_3m_v_bar)
+    f_fill_cr_row(cr_tab, 5, "5m P", m1_5m_p_idx, m1_5m_p_dir, m1_5m_p_bar)
+    f_fill_cr_row(cr_tab, 6, "5m V", m1_5m_v_idx, m1_5m_v_dir, m1_5m_v_bar)
+
+// --- CROSSOVER SCANNING EXECUTION ---
+var float m1_1m_p_idx = 0.0, var float m1_1m_p_dir = 0.0, var float m1_1m_p_bar = 0.0
+var float m1_1m_v_idx = 0.0, var float m1_1m_v_dir = 0.0, var float m1_1m_v_bar = 0.0
+
+var float m1_3m_p_idx = 0.0, var float m1_3m_p_dir = 0.0, var float m1_3m_p_bar = 0.0
+var float m1_3m_v_idx = 0.0, var float m1_3m_v_dir = 0.0, var float m1_3m_v_bar = 0.0
+
+var float m1_5m_p_idx = 0.0, var float m1_5m_p_dir = 0.0, var float m1_5m_p_bar = 0.0
+var float m1_5m_v_idx = 0.0, var float m1_5m_v_dir = 0.0, var float m1_5m_v_bar = 0.0
+
+if enable_cr
+    [i1_p, d1_p, b1_p, i1_v, d1_v, b1_v] = request.security(syminfo.tickerid, "1", f_m1_crossover_scanner())
+    m1_1m_p_idx := i1_p, m1_1m_p_dir := d1_p, m1_1m_p_bar := b1_p
+    m1_1m_v_idx := i1_v, m1_1m_v_dir := d1_v, m1_1m_v_bar := b1_v
+
+    [i3_p, d3_p, b3_p, i3_v, d3_v, b3_v] = request.security(syminfo.tickerid, "3", f_m1_crossover_scanner())
+    m1_3m_p_idx := i3_p, m1_3m_p_dir := d3_p, m1_3m_p_bar := b3_p
+    m1_3m_v_idx := i3_v, m1_3m_v_dir := d3_v, m1_3m_v_bar := b3_v
+
+    [i5_p, d5_p, b5_p, i5_v, d5_v, b5_v] = request.security(syminfo.tickerid, "5", f_m1_crossover_scanner())
+    m1_5m_p_idx := i5_p, m1_5m_p_dir := d5_p, m1_5m_p_bar := b5_p
+    m1_5m_v_idx := i5_v, m1_5m_v_dir := d5_v, m1_5m_v_bar := b5_v
+
+// --- CROSSOVER VISUALIZATION (LINES) ---
+if enable_cr and show_cr_lines
+    // Detect change in bar index from security results to know when a NEW crossover happened
+    new_1m_p = ta.change(m1_1m_p_bar) != 0, new_1m_v = ta.change(m1_1m_v_bar) != 0
+    new_3m_p = ta.change(m1_3m_p_bar) != 0, new_3m_v = ta.change(m1_3m_v_bar) != 0
+    new_5m_p = ta.change(m1_5m_p_bar) != 0, new_5m_v = ta.change(m1_5m_v_bar) != 0
+
+    if new_1m_p or new_1m_v or new_3m_p or new_3m_v or new_5m_p or new_5m_v
+        line.new(bar_index, low, bar_index, high, extend=extend.both, color=color.new(color.white, 50), style=line.style_dashed)
 
 // Labels (Shared)
 var label lp = na, var label lv = na
