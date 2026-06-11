@@ -310,7 +310,7 @@ f_fill_cr_row(table t, int r, string tf_str, float idx, float dir, float b_idx, 
         table.cell(t, 2, r, "-", bgcolor=color.new(color.gray, 90), text_color=color.gray)
         table.cell(t, 3, r, "-", bgcolor=color.new(color.gray, 90), text_color=color.gray)
 
-f_draw_m1_peak_ex(float gamma_val, float[] sz_unit, color m_c, float[] v0_data, int start_idx, float start_val, bool allowed_tf, label[] l_cr_labels, polyline[] pl_arr, float e_h, float e_l, int f_w, bool cr_en, bool sh_ar) =>
+f_draw_m1_peak_ex(float gamma_val, float sz_unit, color m_c, float[] v0_data, int start_idx, float start_val, bool allowed_tf, label[] l_cr_labels, polyline[] pl_arr, float e_h, float e_l, int f_w, bool cr_en, bool sh_ar) =>
     if not na(gamma_val) and not na(sz_unit)
         FiltState f_re = FiltState.new()
         chart.point[] ptse = array.new<chart.point>(0)
@@ -336,7 +336,7 @@ f_draw_m1_peak_ex(float gamma_val, float[] sz_unit, color m_c, float[] v0_data, 
         if array.size(ptse) > 1
             array.push(pl_arr, polyline.new(ptse, line_color=m_c, line_width=f_w))
 
-f_draw_m1_valley_ex(float gamma_val, float[] sz_unit, color m_c, float[] v0_data, int start_idx, float start_val, bool allowed_tf, label[] l_cr_labels, polyline[] pl_arr, float e_h, float e_l, int f_w, bool cr_en, bool sh_ar) =>
+f_draw_m1_valley_ex(float gamma_val, float sz_unit, color m_c, float[] v0_data, int start_idx, float start_val, bool allowed_tf, label[] l_cr_labels, polyline[] pl_arr, float e_h, float e_l, int f_w, bool cr_en, bool sh_ar) =>
     if not na(gamma_val) and not na(sz_unit)
         FiltState f_re = FiltState.new()
         chart.point[] ptse = array.new<chart.point>(0)
