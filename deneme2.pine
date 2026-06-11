@@ -1,5 +1,5 @@
 //@version=6
-indicator("Volcanic Auto Peaks & Valleys v6", overlay=true, max_bars_back=5000, max_lines_count=500, max_labels_count=500, max_polylines_count=100)
+indicator("Volcanic Auto Peaks & Valleys v6", overlay=true, max_lines_count=500, max_labels_count=500, max_polylines_count=100)
 
 // --- GRUPLAR / GROUPS ---
 string GRP_AUTO = "⚓ Otomatik Çapa Ayarları / Auto Anchor Settings"
@@ -7,6 +7,7 @@ string GRP_M1   = "🚀 Motor 1 Ayarları / Engine 1 Settings"
 string GRP_M2   = "🚀 Motor 2 Ayarları / Engine 2 Settings"
 string GRP_VIS  = "🎨 Görsel Ayarlar / Visual Settings"
 string GRP_TAB  = "📊 Tablo Ayarları / Table Settings"
+string GRP_CR   = "🔄 Kırılım Kontrol Motoru / Crossover Engine"
 
 // --- GİRDİLER / INPUTS ---
 lb_mode        = input.string("Manuel", "Tarama Modu / Lookback Mode", options=["Manuel", "Otomatik (Hassasiyet)", "Global (Maksimum)", "Manuel (Tarih Seçimi)"], group=GRP_AUTO)
@@ -23,6 +24,7 @@ p_gamma_val      = input.float(9.42477796076938, "Motor 1: Tepe Gamma", options=
 v_gamma_val      = input.float(9.42477796076938, "Motor 1: Dip Gamma", options=[1.5707963267948966, 3.141592653589793, 4.71238898038469, 6.283185307179586, 7.853981633974483, 9.42477796076938, 10.995574287564276, 12.566370614359172, 14.137166941154069, 15.707963267948966, 17.27875959474386, 18.84955592153876, 20.420352248333657, 21.991148575128552, 23.561944901923447, 25.132741228718345, 26.703537555513243, 28.274333882308138, 29.845130209103033, 31.41592653589793, 47.12388980384689, 62.83185307179586, 78.53981633974483, 94.24777960769379, 109.95574287564276, 125.66370614359172, 141.3716694115407], group=GRP_M1)
 atr_mult         = input.float(3.1415926535897932, "Motor 1: ATR Çarpanı", options=[0.0000031415926535897932, 0.000031415926535897932, 0.00031415926535897932, 0.0031415926535897932, 0.031415926535897932, 0.31415926535897932, 3.1415926535897932, 31.415926535897932, 314.15926535897932, 3141.5926535897932], group=GRP_M1)
 extra_layer_conn = input.string("ATR Çarpanı", "Motor 1: Ek Katman Bağlantısı", options=["ATR Çarpanı", "Gamma"], group=GRP_M1)
+use_ha_m1        = input.bool(false, "Motor 1: Heikin Ashi Kullan / Use HA", group=GRP_M1)
 
 // --- MOTOR 2 GİRDİLERİ ---
 show_m2          = input.bool(true, "Motor 2'yi Aktifleştir / Enable Motor 2", group=GRP_M2)
@@ -30,17 +32,22 @@ p_gamma_val_2      = input.float(9.42477796076938, "Motor 2: Tepe Gamma", option
 v_gamma_val_2      = input.float(9.42477796076938, "Motor 2: Dip Gamma", options=[1.5707963267948966, 3.141592653589793, 4.71238898038469, 6.283185307179586, 7.853981633974483, 9.42477796076938, 10.995574287564276, 12.566370614359172, 14.137166941154069, 15.707963267948966, 17.27875959474386, 18.84955592153876, 20.420352248333657, 21.991148575128552, 23.561944901923447, 25.132741228718345, 26.703537555513243, 28.274333882308138, 29.845130209103033, 31.41592653589793, 47.12388980384689, 62.83185307179586, 78.53981633974483, 94.24777960769379, 109.95574287564276, 125.66370614359172, 141.3716694115407], group=GRP_M2)
 atr_mult_2         = input.float(31.415926535897932, "Motor 2: ATR Çarpanı", options=[0.0000031415926535897932, 0.000031415926535897932, 0.00031415926535897932, 0.0031415926535897932, 0.031415926535897932, 0.31415926535897932, 3.1415926535897932, 31.415926535897932, 314.15926535897932, 3141.5926535897932], group=GRP_M2)
 extra_layer_conn_2 = input.string("ATR Çarpanı", "Motor 2: Ek Katman Bağlantısı", options=["ATR Çarpanı", "Gamma"], group=GRP_M2)
+use_ha_m2        = input.bool(false, "Motor 2: Heikin Ashi Kullan / Use HA", group=GRP_M2)
 
 // --- ORTAK GÖRSEL AYARLAR ---
 auto_atr       = input.bool(true, "Otomatik ATR Periyodu / Auto ATR Period", group=GRP_VIS)
 atr_opt        = input.float(8.1, "Manuel ATR Periyodu / Manual ATR Period", minval=0.01, maxval=4990.0, step=0.1, group=GRP_VIS)
 show_peak      = input.bool(true, "Tepe Filtresini Göster / Show Peak Filter", group=GRP_VIS)
 show_valley    = input.bool(true, "Dip Filtresini Göster / Show Valley Filter", group=GRP_VIS)
-use_ha         = input.bool(false, "Heikin Ashi Hesaplaması Kullan / Use Heikin Ashi Calculation", group=GRP_VIS)
 filt_width     = input.int(2, "Çizgi Kalınlığı / Line Width", minval=1, maxval=5, group=GRP_VIS)
 
 show_table     = input.bool(true, "Bilgi Tablosunu Göster / Show Info Table", group=GRP_TAB)
 table_pos      = input.string("Top Right", "Tablo Konumu / Table Position", options=["Top Right", "Bottom Right", "Top Left", "Bottom Left", "Middle Right"], group=GRP_TAB)
+
+// --- KIRILIM KONTROL GİRDİLERİ ---
+enable_cr      = input.bool(true, "Kırılım Motorunu Aktifleştir / Enable Crossover Engine", group=GRP_CR)
+show_cr_arrows = input.bool(true, "Kırılım Oklarını Göster / Show Crossover Arrows", group=GRP_CR)
+cr_table_pos   = input.string("Bottom Left", "Kırılım Tablo Konumu", options=["Top Right", "Bottom Right", "Top Left", "Bottom Left", "Middle Right"], group=GRP_CR)
 
 // --- YARDIMCI FONKSİYONLAR / HELPERS ---
 f_kama_atr(float src, float n) =>
@@ -88,133 +95,6 @@ method upd_filt(FiltState s, float h, float l, float r, float init_val, bool res
             s.rfilt := l + r
     s.rfilt
 
-// --- HESAPLAMA AKIŞI / CALCULATION FLOW ---
-// Heikin Ashi Calculation
-var float haOpen = na
-haClose = (open + high + low + close) / 4
-haOpen := na(haOpen[1]) ? (open + close) / 2 : (haOpen[1] + haClose[1]) / 2
-haHigh = math.max(high, math.max(haOpen, haClose))
-haLow  = math.min(low,  math.min(haOpen, haClose))
-
-eff_h  = use_ha ? haHigh : high
-eff_l  = use_ha ? haLow  : low
-eff_c  = use_ha ? haClose : close
-float tr = use_ha ? math.max(haHigh - haLow, math.max(math.abs(haHigh - haClose[1]), math.abs(haLow - haClose[1]))) : ta.tr(true)
-
-int lb_input_val = lb_mode == "Global (Maksimum)" ? 4990 : lb_mode == "Otomatik (Hassasiyet)" ? lb_sens * 144 : auto_lookback
-
-// Calculation of is_in_range without last_bar_index dependency
-// Using timenow to estimate the current bar position relative to history
-bool is_in_range = (lb_mode == "Global (Maksimum)") or 
-                  (lb_mode == "Manuel (Tarih Seçimi)") or
-                  (timenow - time < (lb_input_val + 500) * timeframe.in_seconds() * 1000)
-
-// Engine 1 Parameters
-float atr_per_1 = math.min(4990.0, auto_atr ? (timeframe.in_seconds() / 60.0) * atr_mult : atr_opt)
-float cur_sz_unit_1_raw = f_kama_atr(tr, nz(atr_per_1, 8.1))
-float cur_sz_unit_1 = is_in_range ? cur_sz_unit_1_raw : 0.0
-
-float atr_mult_ex_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 10.0 : atr_mult
-if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex_1 > 3141.5926535897932 + 1.0)
-    atr_mult_ex_1 := na
-
-float atr_per_ex_1 = not na(atr_mult_ex_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex_1) : na
-float cur_sz_unit_ex_1_raw = f_kama_atr(tr, nz(atr_per_ex_1, 8.1))
-float cur_sz_unit_ex_1 = is_in_range and not na(atr_per_ex_1) ? cur_sz_unit_ex_1_raw : na
-
-// Motor 1: 2nd Extra Peak Parameters
-float atr_mult_ex2_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 100.0 : atr_mult
-if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex2_1 > 3141.5926535897932 + 1.0)
-    atr_mult_ex2_1 := na
-float atr_per_ex2_1 = not na(atr_mult_ex2_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex2_1) : na
-float cur_sz_unit_ex2_1_raw = f_kama_atr(tr, nz(atr_per_ex2_1, 8.1))
-float cur_sz_unit_ex2_1 = is_in_range and not na(atr_per_ex2_1) ? cur_sz_unit_ex2_1_raw : na
-
-// Motor 1: 3rd Extra Peak Parameters
-float atr_mult_ex3_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 1000.0 : atr_mult
-if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex3_1 > 3141.5926535897932 + 1.0)
-    atr_mult_ex3_1 := na
-float atr_per_ex3_1 = not na(atr_mult_ex3_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex3_1) : na
-float cur_sz_unit_ex3_1_raw = f_kama_atr(tr, nz(atr_per_ex3_1, 8.1))
-float cur_sz_unit_ex3_1 = is_in_range and not na(atr_per_ex3_1) ? cur_sz_unit_ex3_1_raw : na
-
-float p_gamma_ex_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 1.5707963267948966 : p_gamma_val
-if extra_layer_conn == "Gamma" and (p_gamma_ex_1 > 141.3716694115407 + 0.1)
-    p_gamma_ex_1 := na
-float p_gamma_ex2_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 3.1415926535897932 : p_gamma_val
-if extra_layer_conn == "Gamma" and (p_gamma_ex2_1 > 141.3716694115407 + 0.1)
-    p_gamma_ex2_1 := na
-float p_gamma_ex3_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 4.71238898038469 : p_gamma_val
-if extra_layer_conn == "Gamma" and (p_gamma_ex3_1 > 141.3716694115407 + 0.1)
-    p_gamma_ex3_1 := na
-float v_gamma_ex_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 1.5707963267948966 : v_gamma_val
-if extra_layer_conn == "Gamma" and (v_gamma_ex_1 > 141.3716694115407 + 0.1)
-    v_gamma_ex_1 := na
-float v_gamma_ex2_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 3.1415926535897932 : v_gamma_val
-if extra_layer_conn == "Gamma" and (v_gamma_ex2_1 > 141.3716694115407 + 0.1)
-    v_gamma_ex2_1 := na
-float v_gamma_ex3_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 4.71238898038469 : v_gamma_val
-if extra_layer_conn == "Gamma" and (v_gamma_ex3_1 > 141.3716694115407 + 0.1)
-    v_gamma_ex3_1 := na
-
-// Engine 2 Parameters
-float atr_per_2 = math.min(4990.0, auto_atr ? (timeframe.in_seconds() / 60.0) * atr_mult_2 : atr_opt)
-float cur_sz_unit_2_raw = f_kama_atr(tr, nz(atr_per_2, 8.1))
-float cur_sz_unit_2 = is_in_range ? cur_sz_unit_2_raw : 0.0
-
-float atr_mult_ex_2 = extra_layer_conn_2 == "ATR Çarpanı" ? atr_mult_2 * 10.0 : atr_mult_2
-if extra_layer_conn_2 == "ATR Çarpanı" and (atr_mult_ex_2 > 3141.5926535897932 + 1.0)
-    atr_mult_ex_2 := na
-
-float atr_per_ex_2 = not na(atr_mult_ex_2) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex_2) : na
-float cur_sz_unit_ex_2_raw = f_kama_atr(tr, nz(atr_per_ex_2, 8.1))
-float cur_sz_unit_ex_2 = is_in_range and not na(atr_per_ex_2) ? cur_sz_unit_ex_2_raw : na
-
-float p_gamma_ex_2 = extra_layer_conn_2 == "Gamma" ? p_gamma_val_2 + 1.5707963267948966 : p_gamma_val_2
-if extra_layer_conn_2 == "Gamma" and (p_gamma_ex_2 > 141.3716694115407 + 0.1)
-    p_gamma_ex_2 := na
-float v_gamma_ex_2 = extra_layer_conn_2 == "Gamma" ? v_gamma_val_2 + 1.5707963267948966 : v_gamma_val_2
-if extra_layer_conn_2 == "Gamma" and (v_gamma_ex_2 > 141.3716694115407 + 0.1)
-    v_gamma_ex_2 := na
-
-max_bars_back(cur_sz_unit_1, 5000)
-max_bars_back(cur_sz_unit_ex_1, 5000)
-max_bars_back(cur_sz_unit_ex2_1, 5000)
-float cur_sz_unit_ex2_v1_raw = f_kama_atr(tr, nz(atr_per_ex2_1, 8.1))
-float cur_sz_unit_ex2_v1 = is_in_range and not na(atr_per_ex2_1) ? cur_sz_unit_ex2_v1_raw : na
-max_bars_back(cur_sz_unit_ex2_v1, 5000)
-max_bars_back(cur_sz_unit_ex3_1, 5000)
-max_bars_back(cur_sz_unit_2, 5000)
-max_bars_back(cur_sz_unit_ex_2, 5000)
-max_bars_back(high, 5000)
-max_bars_back(low, 5000)
-max_bars_back(close, 5000)
-max_bars_back(time, 5000)
-max_bars_back(eff_h, 5000)
-max_bars_back(eff_l, 5000)
-max_bars_back(eff_c, 5000)
-
-// 3. Anchor & Lookback State (Shared)
-int lb_input = lb_input_val
-int eff_lb = math.min(math.max(1, lb_input), bar_index + 1)
-f_dyn_hb(src, len) => ta.highestbars(src, math.min(len, bar_index + 1))
-f_dyn_lb(src, len) => ta.lowestbars(src, math.min(len, bar_index + 1))
-
-hb_4990 = f_dyn_hb(eff_h, 4990), lb_4990 = f_dyn_lb(eff_l, 4990)
-hb_auto = f_dyn_hb(eff_h, lb_input), lb_auto = f_dyn_lb(eff_l, lb_input)
-
-// Final Sizes for Engines
-float cur_p_sz_1 = cur_sz_unit_1 * p_gamma_val
-float cur_v_sz_1 = cur_sz_unit_1 * v_gamma_val
-float cur_p_sz_2 = cur_sz_unit_2 * p_gamma_val_2
-float cur_v_sz_2 = cur_sz_unit_2 * v_gamma_val_2
-
-// Anchor Indices (Shared)
-var int settled_p_idx = na
-var int settled_v_idx = na
-var float last_f_p_1 = na
-var float last_f_v_1 = na
-
 f_get_settled_idx(bool is_peak, int lb_mode_idx, int lb_val, float prev_f, float sz_val, int prev_settled, float h_src, float l_src, float c_src, int hb_49, int lb_49, int hb_a, int lb_a) =>
     int off = lb_mode_idx == 0 ? (is_peak ? hb_49 : lb_49) : (is_peak ? hb_a : lb_a)
     int raw_ext_idx = bar_index + off
@@ -229,10 +109,653 @@ f_get_settled_idx(bool is_peak, int lb_mode_idx, int lb_val, float prev_f, float
             res_idx := raw_ext_idx
     res_idx
 
+// --- CROSSOVER CORE LOGIC ---
+f_get_cr_data(float m_val, float ex1, float ex2, float ex3, float ex4, float ex5, float ex6, float ex7, float ex8, float ex9, float ex10, float ex11, float ex12, float ex13) =>
+    float res_idx = 0.0 // 1 to 13
+    float res_dir = 0.0 // 1: Up, -1: Down
+
+    // Check for crossovers. main filter (m_val) crosses others.
+    // Divergence check: Previous values must be different to avoid anchor overlap signal
+    bool div1 = nz(m_val[1]) != nz(ex1[1])
+    bool div2 = nz(m_val[1]) != nz(ex2[1])
+    bool div3 = nz(m_val[1]) != nz(ex3[1])
+    bool div4 = nz(m_val[1]) != nz(ex4[1])
+    bool div5 = nz(m_val[1]) != nz(ex5[1])
+    bool div6 = nz(m_val[1]) != nz(ex6[1])
+    bool div7 = nz(m_val[1]) != nz(ex7[1])
+    bool div8 = nz(m_val[1]) != nz(ex8[1])
+    bool div9 = nz(m_val[1]) != nz(ex9[1])
+    bool div10 = nz(m_val[1]) != nz(ex10[1])
+    bool div11 = nz(m_val[1]) != nz(ex11[1])
+    bool div12 = nz(m_val[1]) != nz(ex12[1])
+    bool div13 = nz(m_val[1]) != nz(ex13[1])
+
+    if ta.crossunder(m_val, ex13) and div13
+        res_idx := 13.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex13) and div13
+        res_idx := 13.0, res_dir := 1.0
+    else if ta.crossunder(m_val, ex12) and div12
+        res_idx := 12.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex12) and div12
+        res_idx := 12.0, res_dir := 1.0
+    else if ta.crossunder(m_val, ex11) and div11
+        res_idx := 11.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex11) and div11
+        res_idx := 11.0, res_dir := 1.0
+    else if ta.crossunder(m_val, ex10) and div10
+        res_idx := 10.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex10) and div10
+        res_idx := 10.0, res_dir := 1.0
+    else if ta.crossunder(m_val, ex9) and div9
+        res_idx := 9.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex9) and div9
+        res_idx := 9.0, res_dir := 1.0
+    else if ta.crossunder(m_val, ex8) and div8
+        res_idx := 8.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex8) and div8
+        res_idx := 8.0, res_dir := 1.0
+    else if ta.crossunder(m_val, ex7) and div7
+        res_idx := 7.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex7) and div7
+        res_idx := 7.0, res_dir := 1.0
+    else if ta.crossunder(m_val, ex6) and div6
+        res_idx := 6.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex6) and div6
+        res_idx := 6.0, res_dir := 1.0
+    else if ta.crossunder(m_val, ex5) and div5
+        res_idx := 5.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex5) and div5
+        res_idx := 5.0, res_dir := 1.0
+    else if ta.crossunder(m_val, ex4) and div4
+        res_idx := 4.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex4) and div4
+        res_idx := 4.0, res_dir := 1.0
+    else if ta.crossunder(m_val, ex3) and div3
+        res_idx := 3.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex3) and div3
+        res_idx := 3.0, res_dir := 1.0
+    else if ta.crossunder(m_val, ex2) and div2
+        res_idx := 2.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex2) and div2
+        res_idx := 2.0, res_dir := 1.0
+    else if ta.crossunder(m_val, ex1) and div1
+        res_idx := 1.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex1) and div1
+        res_idx := 1.0, res_dir := 1.0
+
+    [res_idx, res_dir]
+
+f_m1_crossover_scanner() =>
+    // This function replicates Motor 1 logic for scanning
+    // 1. Inputs/Params (using global scope inputs is fine if called within security)
+
+    // 2. Price/TR
+    t_h = high, t_l = low, t_c = close
+    t_tr = ta.tr(true) // Scanning will use standard TR for consistency with Anchor logic
+
+    // 3. Size Units (KAMA ATR)
+    t_atr_per = math.min(4990.0, auto_atr ? (timeframe.in_seconds() / 60.0) * atr_mult : atr_opt)
+    t_unit = f_kama_atr(t_tr, nz(t_atr_per, 8.1))
+
+    t_unit_ex1 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 10.0 : atr_mult)))
+    t_unit_ex2 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 100.0 : atr_mult)))
+    t_unit_ex3 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 1000.0 : atr_mult)))
+    t_unit_ex4 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 10000.0 : atr_mult)))
+    t_unit_ex5 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 100000.0 : atr_mult)))
+    t_unit_ex6 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 1000000.0 : atr_mult)))
+    t_unit_ex7 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 10000000.0 : atr_mult)))
+    t_unit_ex8 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 100000000.0 : atr_mult)))
+    t_unit_ex9 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 1000000000.0 : atr_mult)))
+    t_unit_ex10 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 10000000000.0 : atr_mult)))
+    t_unit_ex11 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 100000000000.0 : atr_mult)))
+    t_unit_ex12 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 1000000000000.0 : atr_mult)))
+    t_unit_ex13 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 10000000000000.0 : atr_mult)))
+
+    // 4. Gamma Params
+    pg = p_gamma_val, vg = v_gamma_val
+    pg_ex1 = extra_layer_conn == "Gamma" ? pg + 1.5707963267948966 : pg
+    pg_ex2 = extra_layer_conn == "Gamma" ? pg + 3.1415926535897932 : pg
+    pg_ex3 = extra_layer_conn == "Gamma" ? pg + 4.71238898038469 : pg
+    pg_ex4 = extra_layer_conn == "Gamma" ? pg + 6.283185307179586 : pg
+    pg_ex5 = extra_layer_conn == "Gamma" ? pg + 7.853981633974483 : pg
+    pg_ex6 = extra_layer_conn == "Gamma" ? pg + 9.42477796076938 : pg
+    pg_ex7 = extra_layer_conn == "Gamma" ? pg + 10.995574287564276 : pg
+    pg_ex8 = extra_layer_conn == "Gamma" ? pg + 12.566370614359172 : pg
+    pg_ex9 = extra_layer_conn == "Gamma" ? pg + 14.137166941154069 : pg
+    pg_ex10 = extra_layer_conn == "Gamma" ? pg + 15.707963267948966 : pg
+    pg_ex11 = extra_layer_conn == "Gamma" ? pg + 17.27875959474386 : pg
+    pg_ex12 = extra_layer_conn == "Gamma" ? pg + 18.84955592153876 : pg
+    pg_ex13 = extra_layer_conn == "Gamma" ? pg + 20.420352248333657 : pg
+
+    vg_ex1 = extra_layer_conn == "Gamma" ? vg + 1.5707963267948966 : vg
+    vg_ex2 = extra_layer_conn == "Gamma" ? vg + 3.1415926535897932 : vg
+    vg_ex3 = extra_layer_conn == "Gamma" ? vg + 4.71238898038469 : vg
+    vg_ex4 = extra_layer_conn == "Gamma" ? vg + 6.283185307179586 : vg
+    vg_ex5 = extra_layer_conn == "Gamma" ? vg + 7.853981633974483 : vg
+    vg_ex6 = extra_layer_conn == "Gamma" ? vg + 9.42477796076938 : vg
+    vg_ex7 = extra_layer_conn == "Gamma" ? vg + 10.995574287564276 : vg
+    vg_ex8 = extra_layer_conn == "Gamma" ? vg + 12.566370614359172 : vg
+    vg_ex9 = extra_layer_conn == "Gamma" ? vg + 14.137166941154069 : vg
+    vg_ex10 = extra_layer_conn == "Gamma" ? vg + 15.707963267948966 : vg
+    vg_ex11 = extra_layer_conn == "Gamma" ? vg + 17.27875959474386 : vg
+    vg_ex12 = extra_layer_conn == "Gamma" ? vg + 18.84955592153876 : vg
+    vg_ex13 = extra_layer_conn == "Gamma" ? vg + 20.420352248333657 : vg
+
+    // 5. Anchor Calculation (Standard Prices)
+    int lb_val = lb_mode == "Global (Maksimum)" ? 4990 : lb_mode == "Otomatik (Hassasiyet)" ? lb_sens * 144 : auto_lookback
+    int eff_lb = math.min(math.max(1, lb_val), bar_index + 1)
+
+    // We need to maintain state inside security, so we use var
+    var int s_p_idx = na, var int s_v_idx = na
+    var float l_f_p = na, var float l_f_v = na
+
+    hb_49 = ta.highestbars(t_h, 4990), lb_49 = ta.lowestbars(t_l, 4990)
+    hb_a = ta.highestbars(t_h, eff_lb), lb_a = ta.lowestbars(t_l, eff_lb)
+
+    lb_idx = lb_mode == "Global (Maksimum)" ? 0 : 1
+
+    // Manual calculation of range within security context
+    is_r = (lb_mode == "Global (Maksimum)") or (lb_mode == "Manuel (Tarih Seçimi)") or (timenow - time < (lb_val + 500) * timeframe.in_seconds() * 1000)
+
+    if is_r
+        s_p_idx := lb_mode == "Manuel (Tarih Seçimi)" ? ta.valuewhen(time <= p_time, bar_index, 0) : f_get_settled_idx(true, lb_idx, lb_val, l_f_p, t_unit * pg, s_p_idx, t_h, t_l, t_c, hb_49, lb_49, hb_a, lb_a)
+        s_v_idx := lb_mode == "Manuel (Tarih Seçimi)" ? ta.valuewhen(time <= v_time, bar_index, 0) : f_get_settled_idx(false, lb_idx, lb_val, l_f_v, t_unit * vg, s_v_idx, t_h, t_l, t_c, hb_49, lb_49, hb_a, lb_a)
+
+    // 6. Filter Updates
+    var FiltState fs_p = FiltState.new(), var FiltState fs_v = FiltState.new()
+    var FiltState fs_p1 = FiltState.new(), var FiltState fs_v1 = FiltState.new()
+    var FiltState fs_p2 = FiltState.new(), var FiltState fs_v2 = FiltState.new()
+    var FiltState fs_p3 = FiltState.new(), var FiltState fs_v3 = FiltState.new()
+    var FiltState fs_p4 = FiltState.new(), var FiltState fs_v4 = FiltState.new()
+    var FiltState fs_p5 = FiltState.new(), var FiltState fs_v5 = FiltState.new()
+    var FiltState fs_p6 = FiltState.new(), var FiltState fs_v6 = FiltState.new()
+    var FiltState fs_p7 = FiltState.new(), var FiltState fs_v7 = FiltState.new()
+    var FiltState fs_p8 = FiltState.new(), var FiltState fs_v8 = FiltState.new()
+    var FiltState fs_p9 = FiltState.new(), var FiltState fs_v9 = FiltState.new()
+    var FiltState fs_p10 = FiltState.new(), var FiltState fs_v10 = FiltState.new()
+    var FiltState fs_p11 = FiltState.new(), var FiltState fs_v11 = FiltState.new()
+    var FiltState fs_p12 = FiltState.new(), var FiltState fs_v12 = FiltState.new()
+    var FiltState fs_p13 = FiltState.new(), var FiltState fs_v13 = FiltState.new()
+
+    is_p_anc = (bar_index == s_p_idx) or (ta.change(s_p_idx) != 0)
+    is_v_anc = (bar_index == s_v_idx) or (ta.change(s_v_idx) != 0)
+
+    i_p = t_h[math.max(0, bar_index - nz(s_p_idx, bar_index))]
+    i_v = t_l[math.max(0, bar_index - nz(s_v_idx, bar_index))]
+
+    l_f_p := fs_p.upd_filt(t_h, t_l, t_unit * pg, i_p, is_p_anc)
+    l_f_v := fs_v.upd_filt(t_h, t_l, t_unit * vg, i_v, is_v_anc)
+
+    f_p1 = fs_p1.upd_filt(t_h, t_l, t_unit_ex1 * pg_ex1, i_p, is_p_anc)
+    f_v1 = fs_v1.upd_filt(t_h, t_l, t_unit_ex1 * vg_ex1, i_v, is_v_anc)
+    f_p2 = fs_p2.upd_filt(t_h, t_l, t_unit_ex2 * pg_ex2, i_p, is_p_anc)
+    f_v2 = fs_v2.upd_filt(t_h, t_l, t_unit_ex2 * vg_ex2, i_v, is_v_anc)
+    f_p3 = fs_p3.upd_filt(t_h, t_l, t_unit_ex3 * pg_ex3, i_p, is_p_anc)
+    f_v3 = fs_v3.upd_filt(t_h, t_l, t_unit_ex3 * vg_ex3, i_v, is_v_anc)
+    f_p4 = fs_p4.upd_filt(t_h, t_l, t_unit_ex4 * pg_ex4, i_p, is_p_anc)
+    f_v4 = fs_v4.upd_filt(t_h, t_l, t_unit_ex4 * vg_ex4, i_v, is_v_anc)
+    f_p5 = fs_p5.upd_filt(t_h, t_l, t_unit_ex5 * pg_ex5, i_p, is_p_anc)
+    f_v5 = fs_v5.upd_filt(t_h, t_l, t_unit_ex5 * vg_ex5, i_v, is_v_anc)
+    f_p6 = fs_p6.upd_filt(t_h, t_l, t_unit_ex6 * pg_ex6, i_p, is_p_anc)
+    f_v6 = fs_v6.upd_filt(t_h, t_l, t_unit_ex6 * vg_ex6, i_v, is_v_anc)
+    f_p7 = fs_p7.upd_filt(t_h, t_l, t_unit_ex7 * pg_ex7, i_p, is_p_anc)
+    f_v7 = fs_v7.upd_filt(t_h, t_l, t_unit_ex7 * vg_ex7, i_v, is_v_anc)
+    f_p8 = fs_p8.upd_filt(t_h, t_l, t_unit_ex8 * pg_ex8, i_p, is_p_anc)
+    f_v8 = fs_v8.upd_filt(t_h, t_l, t_unit_ex8 * vg_ex8, i_v, is_v_anc)
+    f_p9 = fs_p9.upd_filt(t_h, t_l, t_unit_ex9 * pg_ex9, i_p, is_p_anc)
+    f_v9 = fs_v9.upd_filt(t_h, t_l, t_unit_ex9 * vg_ex9, i_v, is_v_anc)
+    f_p10 = fs_p10.upd_filt(t_h, t_l, t_unit_ex10 * pg_ex10, i_p, is_p_anc)
+    f_v10 = fs_v10.upd_filt(t_h, t_l, t_unit_ex10 * vg_ex10, i_v, is_v_anc)
+    f_p11 = fs_p11.upd_filt(t_h, t_l, t_unit_ex11 * pg_ex11, i_p, is_p_anc)
+    f_v11 = fs_v11.upd_filt(t_h, t_l, t_unit_ex11 * vg_ex11, i_v, is_v_anc)
+    f_p12 = fs_p12.upd_filt(t_h, t_l, t_unit_ex12 * pg_ex12, i_p, is_p_anc)
+    f_v12 = fs_v12.upd_filt(t_h, t_l, t_unit_ex12 * vg_ex12, i_v, is_v_anc)
+    f_p13 = fs_p13.upd_filt(t_h, t_l, t_unit_ex13 * pg_ex13, i_p, is_p_anc)
+    f_v13 = fs_v13.upd_filt(t_h, t_l, t_unit_ex13 * vg_ex13, i_v, is_v_anc)
+
+    // 7. Detection
+    [p_cr_idx, p_cr_dir] = f_get_cr_data(l_f_p, f_p1, f_p2, f_p3, f_p4, f_p5, f_p6, f_p7, f_p8, f_p9, f_p10, f_p11, f_p12, f_p13)
+    [v_cr_idx, v_cr_dir] = f_get_cr_data(l_f_v, f_v1, f_v2, f_v3, f_v4, f_v5, f_v6, f_v7, f_v8, f_v9, f_v10, f_v11, f_v12, f_v13)
+
+    // Find how many bars ago the last crossover happened
+    // We'll return the index, direction and some identifier
+    // For simplicity, let's just return the last event data
+    var float last_p_idx = 0.0, var float last_p_dir = 0.0, var int last_p_bar = 0
+    var float last_v_idx = 0.0, var float last_v_dir = 0.0, var int last_v_bar = 0
+
+    if p_cr_idx > 0
+        last_p_idx := p_cr_idx, last_p_dir := p_cr_dir, last_p_bar := bar_index
+    if v_cr_idx > 0
+        last_v_idx := v_cr_idx, last_v_dir := v_cr_dir, last_v_bar := bar_index
+
+    [last_p_idx, last_p_dir, float(last_p_bar), last_v_idx, last_v_dir, float(last_v_bar), float(bar_index)]
+
+f_fill_cr_row(table t, int r, string tf_str, float idx, float dir, float b_idx, float cur_idx) =>
+    table.cell(t, 0, r, tf_str, bgcolor=color.new(color.gray, 80), text_color=color.white)
+    if idx > 0
+        // Calculate bars ago based on native timeframe indices
+        b_ago = int(cur_idx - b_idx)
+        table.cell(t, 1, r, "L" + str.tostring(idx, "#"), bgcolor=color.new(color.gray, 90), text_color=color.white)
+        table.cell(t, 2, r, dir > 0 ? "↓" : "↑", bgcolor=color.new(color.gray, 90), text_color=dir > 0 ? color.red : color.green)
+        table.cell(t, 3, r, str.tostring(b_ago), bgcolor=color.new(color.gray, 90), text_color=color.white)
+    else
+        table.cell(t, 1, r, "-", bgcolor=color.new(color.gray, 90), text_color=color.gray)
+        table.cell(t, 2, r, "-", bgcolor=color.new(color.gray, 90), text_color=color.gray)
+        table.cell(t, 3, r, "-", bgcolor=color.new(color.gray, 90), text_color=color.gray)
+
+f_draw_m1_peak_ex(float gamma_val, float sz_unit, color m_c, float[] v0_data, int start_idx, float start_val, bool allowed_tf, label[] l_cr_labels, polyline[] pl_arr, float e_h, float e_l, int f_w, bool cr_en, bool sh_ar) =>
+    if not na(gamma_val) and not na(sz_unit)
+        FiltState f_re = FiltState.new()
+        chart.point[] ptse = array.new<chart.point>(0)
+        float cfe = na, float pfe = na
+        for j = start_idx to bar_index
+            off = bar_index - j
+            cfe := f_re.upd_filt(e_h[off], e_l[off], sz_unit[off] * gamma_val, start_val, j == start_idx)
+            if not na(pfe) and math.abs(pfe - cfe) > (syminfo.mintick / 10)
+                array.push(ptse, chart.point.from_index(j, pfe))
+            array.push(ptse, chart.point.from_index(j, cfe))
+
+            // Crossover check against v0_data
+            if cr_en and sh_ar and allowed_tf and j > start_idx and array.size(l_cr_labels) < 2000
+                int v_idx = j - start_idx
+                float mv = array.get(v0_data, v_idx)
+                float pmv = array.get(v0_data, v_idx - 1)
+                if not na(mv) and not na(pmv) and not na(pfe) and pmv != pfe
+                    if pmv <= pfe and mv > cfe
+                        array.push(l_cr_labels, label.new(j, mv, text="↓", style=label.style_label_down, color=color.new(color.red, 20), textcolor=color.white, size=size.small))
+                    else if pmv >= pfe and mv < cfe
+                        array.push(l_cr_labels, label.new(j, mv, text="↑", style=label.style_label_up, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
+            pfe := cfe
+        if array.size(ptse) > 1
+            array.push(pl_arr, polyline.new(ptse, line_color=m_c, line_width=f_w))
+
+f_draw_m1_valley_ex(float gamma_val, float sz_unit, color m_c, float[] v0_data, int start_idx, float start_val, bool allowed_tf, label[] l_cr_labels, polyline[] pl_arr, float e_h, float e_l, int f_w, bool cr_en, bool sh_ar) =>
+    if not na(gamma_val) and not na(sz_unit)
+        FiltState f_re = FiltState.new()
+        chart.point[] ptse = array.new<chart.point>(0)
+        float cfe = na, float pfe = na
+        for j = start_idx to bar_index
+            off = bar_index - j
+            cfe := f_re.upd_filt(e_h[off], e_l[off], sz_unit[off] * gamma_val, start_val, j == start_idx)
+            if not na(pfe) and math.abs(pfe - cfe) > (syminfo.mintick / 10)
+                array.push(ptse, chart.point.from_index(j, pfe))
+            array.push(ptse, chart.point.from_index(j, cfe))
+
+            // Crossover check against v0_data
+            if cr_en and sh_ar and allowed_tf and j > start_idx and array.size(l_cr_labels) < 2000
+                int v_idx = j - start_idx
+                float mv = array.get(v0_data, v_idx)
+                float pmv = array.get(v0_data, v_idx - 1)
+                if not na(mv) and not na(pmv) and not na(pfe) and pmv != pfe
+                    if pmv <= pfe and mv > cfe
+                        array.push(l_cr_labels, label.new(j, mv, text="↓", style=label.style_label_down, color=color.new(color.red, 20), textcolor=color.white, size=size.small))
+                    else if pmv >= pfe and mv < cfe
+                        array.push(l_cr_labels, label.new(j, mv, text="↑", style=label.style_label_up, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
+            pfe := cfe
+        if array.size(ptse) > 1
+            array.push(pl_arr, polyline.new(ptse, line_color=m_c, line_width=f_w))
+
+// --- HESAPLAMA AKIŞI / CALCULATION FLOW ---
+// Anchor Prices (Always Standard)
+eff_h_anc = high
+eff_l_anc = low
+eff_c_anc = close
+
+// Heikin Ashi Calculation
+var float haOpen = na
+haClose = (open + high + low + close) / 4
+haOpen := na(haOpen[1]) ? (open + close) / 2 : (haOpen[1] + haClose[1]) / 2
+haHigh = math.max(high, math.max(haOpen, haClose))
+haLow  = math.min(low,  math.min(haOpen, haClose))
+
+// Motor-specific Prices
+eff_h_m1 = use_ha_m1 ? haHigh : high
+eff_l_m1 = use_ha_m1 ? haLow  : low
+eff_c_m1 = use_ha_m1 ? haClose : close
+
+eff_h_m2 = use_ha_m2 ? haHigh : high
+eff_l_m2 = use_ha_m2 ? haLow  : low
+eff_c_m2 = use_ha_m2 ? haClose : close
+
+// True Ranges
+float tr_std = ta.tr(true)
+float tr_ha  = math.max(haHigh - haLow, math.max(math.abs(haHigh - haClose[1]), math.abs(haLow - haClose[1])))
+float tr_m1  = use_ha_m1 ? tr_ha : tr_std
+float tr_m2  = use_ha_m2 ? tr_ha : tr_std
+
+int lb_input_val = lb_mode == "Global (Maksimum)" ? 4990 : lb_mode == "Otomatik (Hassasiyet)" ? lb_sens * 144 : auto_lookback
+
+// Calculation of is_in_range without last_bar_index dependency
+// Using timenow to estimate the current bar position relative to history
+bool is_in_range = (lb_mode == "Global (Maksimum)") or 
+                  (lb_mode == "Manuel (Tarih Seçimi)") or
+                  (timenow - time < (lb_input_val + 500) * timeframe.in_seconds() * 1000)
+
+// Engine 1 Parameters
+float atr_per_1 = math.min(4990.0, auto_atr ? (timeframe.in_seconds() / 60.0) * atr_mult : atr_opt)
+float cur_sz_unit_1_raw = f_kama_atr(tr_m1, nz(atr_per_1, 8.1))
+float cur_sz_unit_1 = is_in_range ? cur_sz_unit_1_raw : 0.0
+
+float atr_mult_ex_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 10.0 : atr_mult
+if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex_1 > 3141.5926535897932 + 1.0)
+    atr_mult_ex_1 := na
+
+float atr_per_ex_1 = not na(atr_mult_ex_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex_1) : na
+float cur_sz_unit_ex_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex_1, 8.1))
+float cur_sz_unit_ex_1 = is_in_range and not na(atr_per_ex_1) ? cur_sz_unit_ex_1_raw : na
+
+// Motor 1: 2nd Extra Peak Parameters
+float atr_mult_ex2_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 100.0 : atr_mult
+if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex2_1 > 3141.5926535897932 + 1.0)
+    atr_mult_ex2_1 := na
+float atr_per_ex2_1 = not na(atr_mult_ex2_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex2_1) : na
+float cur_sz_unit_ex2_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex2_1, 8.1))
+float cur_sz_unit_ex2_1 = is_in_range and not na(atr_per_ex2_1) ? cur_sz_unit_ex2_1_raw : na
+
+// Motor 1: 3rd Extra Peak Parameters
+float atr_mult_ex3_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 1000.0 : atr_mult
+if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex3_1 > 3141.5926535897932 + 1.0)
+    atr_mult_ex3_1 := na
+float atr_per_ex3_1 = not na(atr_mult_ex3_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex3_1) : na
+float cur_sz_unit_ex3_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex3_1, 8.1))
+float cur_sz_unit_ex3_1 = is_in_range and not na(atr_per_ex3_1) ? cur_sz_unit_ex3_1_raw : na
+
+// Motor 1: 4th Extra Peak Parameters
+float atr_mult_ex4_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 10000.0 : atr_mult
+if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex4_1 > 3141.5926535897932 + 1.0)
+    atr_mult_ex4_1 := na
+float atr_per_ex4_1 = not na(atr_mult_ex4_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex4_1) : na
+float cur_sz_unit_ex4_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex4_1, 8.1))
+float cur_sz_unit_ex4_1 = is_in_range and not na(atr_per_ex4_1) ? cur_sz_unit_ex4_1_raw : na
+
+// Motor 1: 5th Extra Peak Parameters
+float atr_mult_ex5_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 100000.0 : atr_mult
+if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex5_1 > 3141.5926535897932 + 1.0)
+    atr_mult_ex5_1 := na
+float atr_per_ex5_1 = not na(atr_mult_ex5_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex5_1) : na
+float cur_sz_unit_ex5_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex5_1, 8.1))
+float cur_sz_unit_ex5_1 = is_in_range and not na(atr_per_ex5_1) ? cur_sz_unit_ex5_1_raw : na
+
+// Motor 1: 6th Extra Peak Parameters
+float atr_mult_ex6_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 1000000.0 : atr_mult
+if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex6_1 > 3141.5926535897932 + 1.0)
+    atr_mult_ex6_1 := na
+float atr_per_ex6_1 = not na(atr_mult_ex6_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex6_1) : na
+float cur_sz_unit_ex6_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex6_1, 8.1))
+float cur_sz_unit_ex6_1 = is_in_range and not na(atr_per_ex6_1) ? cur_sz_unit_ex6_1_raw : na
+
+// Motor 1: 7th Extra Peak Parameters
+float atr_mult_ex7_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 10000000.0 : atr_mult
+if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex7_1 > 3141.5926535897932 + 1.0)
+    atr_mult_ex7_1 := na
+float atr_per_ex7_1 = not na(atr_mult_ex7_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex7_1) : na
+float cur_sz_unit_ex7_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex7_1, 8.1))
+float cur_sz_unit_ex7_1 = is_in_range and not na(atr_per_ex7_1) ? cur_sz_unit_ex7_1_raw : na
+
+// Motor 1: 8th Extra Peak Parameters
+float atr_mult_ex8_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 100000000.0 : atr_mult
+if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex8_1 > 3141.5926535897932 + 1.0)
+    atr_mult_ex8_1 := na
+float atr_per_ex8_1 = not na(atr_mult_ex8_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex8_1) : na
+float cur_sz_unit_ex8_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex8_1, 8.1))
+float cur_sz_unit_ex8_1 = is_in_range and not na(atr_per_ex8_1) ? cur_sz_unit_ex8_1_raw : na
+
+// Motor 1: 9th Extra Peak Parameters
+float atr_mult_ex9_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 1000000000.0 : atr_mult
+if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex9_1 > 3141.5926535897932 + 1.0)
+    atr_mult_ex9_1 := na
+float atr_per_ex9_1 = not na(atr_mult_ex9_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex9_1) : na
+float cur_sz_unit_ex9_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex9_1, 8.1))
+float cur_sz_unit_ex9_1 = is_in_range and not na(atr_per_ex9_1) ? cur_sz_unit_ex9_1_raw : na
+
+// Motor 1: 10th Extra Peak Parameters
+float atr_mult_ex10_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 10000000000.0 : atr_mult
+if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex10_1 > 3141.5926535897932 + 1.0)
+    atr_mult_ex10_1 := na
+float atr_per_ex10_1 = not na(atr_mult_ex10_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex10_1) : na
+float cur_sz_unit_ex10_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex10_1, 8.1))
+float cur_sz_unit_ex10_1 = is_in_range and not na(atr_per_ex10_1) ? cur_sz_unit_ex10_1_raw : na
+
+// Motor 1: 11th Extra Peak Parameters
+float atr_mult_ex11_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 100000000000.0 : atr_mult
+if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex11_1 > 3141.5926535897932 + 1.0)
+    atr_mult_ex11_1 := na
+float atr_per_ex11_1 = not na(atr_mult_ex11_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex11_1) : na
+float cur_sz_unit_ex11_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex11_1, 8.1))
+float cur_sz_unit_ex11_1 = is_in_range and not na(atr_per_ex11_1) ? cur_sz_unit_ex11_1_raw : na
+
+// Motor 1: 12th Extra Peak Parameters
+float atr_mult_ex12_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 1000000000000.0 : atr_mult
+if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex12_1 > 3141.5926535897932 + 1.0)
+    atr_mult_ex12_1 := na
+float atr_per_ex12_1 = not na(atr_mult_ex12_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex12_1) : na
+float cur_sz_unit_ex12_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex12_1, 8.1))
+float cur_sz_unit_ex12_1 = is_in_range and not na(atr_per_ex12_1) ? cur_sz_unit_ex12_1_raw : na
+
+// Motor 1: 13th Extra Peak Parameters
+float atr_mult_ex13_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 10000000000000.0 : atr_mult
+if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex13_1 > 3141.5926535897932 + 1.0)
+    atr_mult_ex13_1 := na
+float atr_per_ex13_1 = not na(atr_mult_ex13_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex13_1) : na
+float cur_sz_unit_ex13_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex13_1, 8.1))
+float cur_sz_unit_ex13_1 = is_in_range and not na(atr_per_ex13_1) ? cur_sz_unit_ex13_1_raw : na
+
+float p_gamma_ex_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 1.5707963267948966 : p_gamma_val
+if extra_layer_conn == "Gamma" and (p_gamma_ex_1 > 141.3716694115407 + 0.1)
+    p_gamma_ex_1 := na
+float p_gamma_ex2_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 3.1415926535897932 : p_gamma_val
+if extra_layer_conn == "Gamma" and (p_gamma_ex2_1 > 141.3716694115407 + 0.1)
+    p_gamma_ex2_1 := na
+float p_gamma_ex3_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 4.71238898038469 : p_gamma_val
+if extra_layer_conn == "Gamma" and (p_gamma_ex3_1 > 141.3716694115407 + 0.1)
+    p_gamma_ex3_1 := na
+float p_gamma_ex4_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 6.283185307179586 : p_gamma_val
+if extra_layer_conn == "Gamma" and (p_gamma_ex4_1 > 141.3716694115407 + 0.1)
+    p_gamma_ex4_1 := na
+float p_gamma_ex5_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 7.853981633974483 : p_gamma_val
+if extra_layer_conn == "Gamma" and (p_gamma_ex5_1 > 141.3716694115407 + 0.1)
+    p_gamma_ex5_1 := na
+float p_gamma_ex6_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 9.42477796076938 : p_gamma_val
+if extra_layer_conn == "Gamma" and (p_gamma_ex6_1 > 141.3716694115407 + 0.1)
+    p_gamma_ex6_1 := na
+float p_gamma_ex7_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 10.995574287564276 : p_gamma_val
+if extra_layer_conn == "Gamma" and (p_gamma_ex7_1 > 141.3716694115407 + 0.1)
+    p_gamma_ex7_1 := na
+float p_gamma_ex8_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 12.566370614359172 : p_gamma_val
+if extra_layer_conn == "Gamma" and (p_gamma_ex8_1 > 141.3716694115407 + 0.1)
+    p_gamma_ex8_1 := na
+float p_gamma_ex9_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 14.137166941154069 : p_gamma_val
+if extra_layer_conn == "Gamma" and (p_gamma_ex9_1 > 141.3716694115407 + 0.1)
+    p_gamma_ex9_1 := na
+float p_gamma_ex10_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 15.707963267948966 : p_gamma_val
+if extra_layer_conn == "Gamma" and (p_gamma_ex10_1 > 141.3716694115407 + 0.1)
+    p_gamma_ex10_1 := na
+float p_gamma_ex11_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 17.27875959474386 : p_gamma_val
+if extra_layer_conn == "Gamma" and (p_gamma_ex11_1 > 141.3716694115407 + 0.1)
+    p_gamma_ex11_1 := na
+float p_gamma_ex12_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 18.84955592153876 : p_gamma_val
+if extra_layer_conn == "Gamma" and (p_gamma_ex12_1 > 141.3716694115407 + 0.1)
+    p_gamma_ex12_1 := na
+float p_gamma_ex13_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 20.420352248333657 : p_gamma_val
+if extra_layer_conn == "Gamma" and (p_gamma_ex13_1 > 141.3716694115407 + 0.1)
+    p_gamma_ex13_1 := na
+float v_gamma_ex_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 1.5707963267948966 : v_gamma_val
+if extra_layer_conn == "Gamma" and (v_gamma_ex_1 > 141.3716694115407 + 0.1)
+    v_gamma_ex_1 := na
+float v_gamma_ex2_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 3.1415926535897932 : v_gamma_val
+if extra_layer_conn == "Gamma" and (v_gamma_ex2_1 > 141.3716694115407 + 0.1)
+    v_gamma_ex2_1 := na
+float v_gamma_ex3_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 4.71238898038469 : v_gamma_val
+if extra_layer_conn == "Gamma" and (v_gamma_ex3_1 > 141.3716694115407 + 0.1)
+    v_gamma_ex3_1 := na
+float v_gamma_ex4_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 6.283185307179586 : v_gamma_val
+if extra_layer_conn == "Gamma" and (v_gamma_ex4_1 > 141.3716694115407 + 0.1)
+    v_gamma_ex4_1 := na
+float v_gamma_ex5_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 7.853981633974483 : v_gamma_val
+if extra_layer_conn == "Gamma" and (v_gamma_ex5_1 > 141.3716694115407 + 0.1)
+    v_gamma_ex5_1 := na
+float v_gamma_ex6_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 9.42477796076938 : v_gamma_val
+if extra_layer_conn == "Gamma" and (v_gamma_ex6_1 > 141.3716694115407 + 0.1)
+    v_gamma_ex6_1 := na
+float v_gamma_ex7_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 10.995574287564276 : v_gamma_val
+if extra_layer_conn == "Gamma" and (v_gamma_ex7_1 > 141.3716694115407 + 0.1)
+    v_gamma_ex7_1 := na
+float v_gamma_ex8_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 12.566370614359172 : v_gamma_val
+if extra_layer_conn == "Gamma" and (v_gamma_ex8_1 > 141.3716694115407 + 0.1)
+    v_gamma_ex8_1 := na
+float v_gamma_ex9_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 14.137166941154069 : v_gamma_val
+if extra_layer_conn == "Gamma" and (v_gamma_ex9_1 > 141.3716694115407 + 0.1)
+    v_gamma_ex9_1 := na
+float v_gamma_ex10_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 15.707963267948966 : v_gamma_val
+if extra_layer_conn == "Gamma" and (v_gamma_ex10_1 > 141.3716694115407 + 0.1)
+    v_gamma_ex10_1 := na
+float v_gamma_ex11_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 17.27875959474386 : v_gamma_val
+if extra_layer_conn == "Gamma" and (v_gamma_ex11_1 > 141.3716694115407 + 0.1)
+    v_gamma_ex11_1 := na
+float v_gamma_ex12_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 18.84955592153876 : v_gamma_val
+if extra_layer_conn == "Gamma" and (v_gamma_ex12_1 > 141.3716694115407 + 0.1)
+    v_gamma_ex12_1 := na
+float v_gamma_ex13_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 20.420352248333657 : v_gamma_val
+if extra_layer_conn == "Gamma" and (v_gamma_ex13_1 > 141.3716694115407 + 0.1)
+    v_gamma_ex13_1 := na
+
+// Engine 2 Parameters
+float atr_per_2 = math.min(4990.0, auto_atr ? (timeframe.in_seconds() / 60.0) * atr_mult_2 : atr_opt)
+float cur_sz_unit_2_raw = f_kama_atr(tr_m2, nz(atr_per_2, 8.1))
+float cur_sz_unit_2 = is_in_range ? cur_sz_unit_2_raw : 0.0
+
+float atr_mult_ex_2 = extra_layer_conn_2 == "ATR Çarpanı" ? atr_mult_2 * 10.0 : atr_mult_2
+if extra_layer_conn_2 == "ATR Çarpanı" and (atr_mult_ex_2 > 3141.5926535897932 + 1.0)
+    atr_mult_ex_2 := na
+
+float atr_per_ex_2 = not na(atr_mult_ex_2) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex_2) : na
+float cur_sz_unit_ex_2_raw = f_kama_atr(tr_m2, nz(atr_per_ex_2, 8.1))
+float cur_sz_unit_ex_2 = is_in_range and not na(atr_per_ex_2) ? cur_sz_unit_ex_2_raw : na
+
+// Motor 2: 2nd Extra Parameters
+float atr_mult_ex2_2 = extra_layer_conn_2 == "ATR Çarpanı" ? atr_mult_2 * 100.0 : atr_mult_2
+if extra_layer_conn_2 == "ATR Çarpanı" and (atr_mult_ex2_2 > 3141.5926535897932 + 1.0)
+    atr_mult_ex2_2 := na
+float atr_per_ex2_2 = not na(atr_mult_ex2_2) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex2_2) : na
+float cur_sz_unit_ex2_2_raw = f_kama_atr(tr_m2, nz(atr_per_ex2_2, 8.1))
+float cur_sz_unit_ex2_2 = is_in_range and not na(atr_per_ex2_2) ? cur_sz_unit_ex2_2_raw : na
+
+// Motor 2: 3rd Extra Parameters
+float atr_mult_ex3_2 = extra_layer_conn_2 == "ATR Çarpanı" ? atr_mult_2 * 1000.0 : atr_mult_2
+if extra_layer_conn_2 == "ATR Çarpanı" and (atr_mult_ex3_2 > 3141.5926535897932 + 1.0)
+    atr_mult_ex3_2 := na
+float atr_per_ex3_2 = not na(atr_mult_ex3_2) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex3_2) : na
+float cur_sz_unit_ex3_2_raw = f_kama_atr(tr_m2, nz(atr_per_ex3_2, 8.1))
+float cur_sz_unit_ex3_2 = is_in_range and not na(atr_per_ex3_2) ? cur_sz_unit_ex3_2_raw : na
+
+// Motor 2: 4th Extra Parameters
+float atr_mult_ex4_2 = extra_layer_conn_2 == "ATR Çarpanı" ? atr_mult_2 * 10000.0 : atr_mult_2
+if extra_layer_conn_2 == "ATR Çarpanı" and (atr_mult_ex4_2 > 3141.5926535897932 + 1.0)
+    atr_mult_ex4_2 := na
+float atr_per_ex4_2 = not na(atr_mult_ex4_2) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex4_2) : na
+float cur_sz_unit_ex4_2_raw = f_kama_atr(tr_m2, nz(atr_per_ex4_2, 8.1))
+float cur_sz_unit_ex4_2 = is_in_range and not na(atr_per_ex4_2) ? cur_sz_unit_ex4_2_raw : na
+
+// Motor 2: 5th Extra Parameters
+float atr_mult_ex5_2 = extra_layer_conn_2 == "ATR Çarpanı" ? atr_mult_2 * 100000.0 : atr_mult_2
+if extra_layer_conn_2 == "ATR Çarpanı" and (atr_mult_ex5_2 > 3141.5926535897932 + 1.0)
+    atr_mult_ex5_2 := na
+float atr_per_ex5_2 = not na(atr_mult_ex5_2) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex5_2) : na
+float cur_sz_unit_ex5_2_raw = f_kama_atr(tr_m2, nz(atr_per_ex5_2, 8.1))
+float cur_sz_unit_ex5_2 = is_in_range and not na(atr_per_ex5_2) ? cur_sz_unit_ex5_2_raw : na
+
+float p_gamma_ex_2 = extra_layer_conn_2 == "Gamma" ? p_gamma_val_2 + 1.5707963267948966 : p_gamma_val_2
+if extra_layer_conn_2 == "Gamma" and (p_gamma_ex_2 > 141.3716694115407 + 0.1)
+    p_gamma_ex_2 := na
+float p_gamma_ex2_2 = extra_layer_conn_2 == "Gamma" ? p_gamma_val_2 + 3.1415926535897932 : p_gamma_val_2
+if extra_layer_conn_2 == "Gamma" and (p_gamma_ex2_2 > 141.3716694115407 + 0.1)
+    p_gamma_ex2_2 := na
+float p_gamma_ex3_2 = extra_layer_conn_2 == "Gamma" ? p_gamma_val_2 + 4.71238898038469 : p_gamma_val_2
+if extra_layer_conn_2 == "Gamma" and (p_gamma_ex3_2 > 141.3716694115407 + 0.1)
+    p_gamma_ex3_2 := na
+float p_gamma_ex4_2 = extra_layer_conn_2 == "Gamma" ? p_gamma_val_2 + 6.283185307179586 : p_gamma_val_2
+if extra_layer_conn_2 == "Gamma" and (p_gamma_ex4_2 > 141.3716694115407 + 0.1)
+    p_gamma_ex4_2 := na
+float p_gamma_ex5_2 = extra_layer_conn_2 == "Gamma" ? p_gamma_val_2 + 7.853981633974483 : p_gamma_val_2
+if extra_layer_conn_2 == "Gamma" and (p_gamma_ex5_2 > 141.3716694115407 + 0.1)
+    p_gamma_ex5_2 := na
+
+float v_gamma_ex_2 = extra_layer_conn_2 == "Gamma" ? v_gamma_val_2 + 1.5707963267948966 : v_gamma_val_2
+if extra_layer_conn_2 == "Gamma" and (v_gamma_ex_2 > 141.3716694115407 + 0.1)
+    v_gamma_ex_2 := na
+float v_gamma_ex2_2 = extra_layer_conn_2 == "Gamma" ? v_gamma_val_2 + 3.1415926535897932 : v_gamma_val_2
+if extra_layer_conn_2 == "Gamma" and (v_gamma_ex2_2 > 141.3716694115407 + 0.1)
+    v_gamma_ex2_2 := na
+float v_gamma_ex3_2 = extra_layer_conn_2 == "Gamma" ? v_gamma_val_2 + 4.71238898038469 : v_gamma_val_2
+if extra_layer_conn_2 == "Gamma" and (v_gamma_ex3_2 > 141.3716694115407 + 0.1)
+    v_gamma_ex3_2 := na
+float v_gamma_ex4_2 = extra_layer_conn_2 == "Gamma" ? v_gamma_val_2 + 6.283185307179586 : v_gamma_val_2
+if extra_layer_conn_2 == "Gamma" and (v_gamma_ex4_2 > 141.3716694115407 + 0.1)
+    v_gamma_ex4_2 := na
+float v_gamma_ex5_2 = extra_layer_conn_2 == "Gamma" ? v_gamma_val_2 + 7.853981633974483 : v_gamma_val_2
+if extra_layer_conn_2 == "Gamma" and (v_gamma_ex5_2 > 141.3716694115407 + 0.1)
+    v_gamma_ex5_2 := na
+
+// Only set max_bars_back for variables that are indexed in loops
+max_bars_back(eff_h_m1, 5000)
+max_bars_back(eff_l_m1, 5000)
+max_bars_back(eff_h_m2, 5000)
+max_bars_back(eff_l_m2, 5000)
+max_bars_back(eff_h_anc, 5000)
+max_bars_back(eff_l_anc, 5000)
+
+// Also set for size units as they are accessed by index in the drawing loops
+max_bars_back(cur_sz_unit_1, 5000)
+max_bars_back(cur_sz_unit_ex_1, 5000)
+max_bars_back(cur_sz_unit_ex2_1, 5000)
+max_bars_back(cur_sz_unit_ex2_v1, 5000)
+max_bars_back(cur_sz_unit_ex3_1, 5000)
+max_bars_back(cur_sz_unit_ex4_1, 5000)
+max_bars_back(cur_sz_unit_ex5_1, 5000)
+max_bars_back(cur_sz_unit_ex6_1, 5000)
+max_bars_back(cur_sz_unit_ex7_1, 5000)
+max_bars_back(cur_sz_unit_ex8_1, 5000)
+max_bars_back(cur_sz_unit_ex9_1, 5000)
+max_bars_back(cur_sz_unit_ex10_1, 5000)
+max_bars_back(cur_sz_unit_ex11_1, 5000)
+max_bars_back(cur_sz_unit_ex12_1, 5000)
+max_bars_back(cur_sz_unit_ex13_1, 5000)
+max_bars_back(cur_sz_unit_2, 5000)
+max_bars_back(cur_sz_unit_ex_2, 5000)
+max_bars_back(cur_sz_unit_ex2_2, 5000)
+max_bars_back(cur_sz_unit_ex3_2, 5000)
+max_bars_back(cur_sz_unit_ex4_2, 5000)
+max_bars_back(cur_sz_unit_ex5_2, 5000)
+
+float cur_sz_unit_ex2_v1_raw = f_kama_atr(tr_m1, nz(atr_per_ex2_1, 8.1))
+float cur_sz_unit_ex2_v1 = is_in_range and not na(atr_per_ex2_1) ? cur_sz_unit_ex2_v1_raw : na
+
+// 3. Anchor & Lookback State (Shared)
+int lb_input = lb_input_val
+int eff_lb = math.min(math.max(1, lb_input), bar_index + 1)
+f_dyn_hb(src, len) => ta.highestbars(src, math.min(len, bar_index + 1))
+f_dyn_lb(src, len) => ta.lowestbars(src, math.min(len, bar_index + 1))
+
+hb_4990 = f_dyn_hb(eff_h_anc, 4990), lb_4990 = f_dyn_lb(eff_l_anc, 4990)
+hb_auto = f_dyn_hb(eff_h_anc, lb_input), lb_auto = f_dyn_lb(eff_l_anc, lb_input)
+
+// Final Sizes for Engines
+float cur_p_sz_1 = cur_sz_unit_1 * p_gamma_val
+float cur_v_sz_1 = cur_sz_unit_1 * v_gamma_val
+float cur_p_sz_2 = cur_sz_unit_2 * p_gamma_val_2
+float cur_v_sz_2 = cur_sz_unit_2 * v_gamma_val_2
+
+// Anchor Indices (Shared)
+var int settled_p_idx = na
+var int settled_v_idx = na
+var float last_f_p_1 = na
+var float last_f_v_1 = na
+
+
 int lb_mode_idx = lb_mode == "Global (Maksimum)" ? 0 : 1
 if is_in_range
-    settled_p_idx := lb_mode == "Manuel (Tarih Seçimi)" ? na : f_get_settled_idx(true, lb_mode_idx, lb_input, last_f_p_1, cur_p_sz_1, settled_p_idx, eff_h, eff_l, eff_c, hb_4990, lb_4990, hb_auto, lb_auto)
-    settled_v_idx := lb_mode == "Manuel (Tarih Seçimi)" ? na : f_get_settled_idx(false, lb_mode_idx, lb_input, last_f_v_1, cur_v_sz_1, settled_v_idx, eff_h, eff_l, eff_c, hb_4990, lb_4990, hb_auto, lb_auto)
+    settled_p_idx := lb_mode == "Manuel (Tarih Seçimi)" ? na : f_get_settled_idx(true, lb_mode_idx, lb_input, last_f_p_1, cur_p_sz_1, settled_p_idx, eff_h_anc, eff_l_anc, eff_c_anc, hb_4990, lb_4990, hb_auto, lb_auto)
+    settled_v_idx := lb_mode == "Manuel (Tarih Seçimi)" ? na : f_get_settled_idx(false, lb_mode_idx, lb_input, last_f_v_1, cur_v_sz_1, settled_v_idx, eff_h_anc, eff_l_anc, eff_c_anc, hb_4990, lb_4990, hb_auto, lb_auto)
 
 if lb_mode == "Manuel (Tarih Seçimi)"
     settled_p_idx := ta.valuewhen(time <= p_time, bar_index, 0)
@@ -246,157 +769,128 @@ var FiltState fs_p2_ex = FiltState.new(), fs_v2_ex = FiltState.new()
 
 is_p_anc = (bar_index == settled_p_idx) or (ta.change(settled_p_idx) != 0)
 is_v_anc = (bar_index == settled_v_idx) or (ta.change(settled_v_idx) != 0)
-float init_p_val = eff_h[math.max(0, bar_index - nz(settled_p_idx, bar_index))]
-float init_v_val = eff_l[math.max(0, bar_index - nz(settled_v_idx, bar_index))]
+float init_p_val_m1 = eff_h_m1[math.max(0, bar_index - nz(settled_p_idx, bar_index))]
+float init_v_val_m1 = eff_l_m1[math.max(0, bar_index - nz(settled_v_idx, bar_index))]
+float init_p_val_m2 = eff_h_m2[math.max(0, bar_index - nz(settled_p_idx, bar_index))]
+float init_v_val_m2 = eff_l_m2[math.max(0, bar_index - nz(settled_v_idx, bar_index))]
 
-last_f_p_1 := fs_p1.upd_filt(eff_h, eff_l, cur_p_sz_1, init_p_val, is_p_anc)
-last_f_v_1 := fs_v1.upd_filt(eff_h, eff_l, cur_v_sz_1, init_v_val, is_v_anc)
+last_f_p_1 := fs_p1.upd_filt(eff_h_m1, eff_l_m1, cur_p_sz_1, init_p_val_m1, is_p_anc)
+last_f_v_1 := fs_v1.upd_filt(eff_h_m1, eff_l_m1, cur_v_sz_1, init_v_val_m1, is_v_anc)
 
 float cur_p_sz_ex_1 = not na(cur_sz_unit_ex_1) and not na(p_gamma_ex_1) ? cur_sz_unit_ex_1 * p_gamma_ex_1 : na
 float cur_v_sz_ex_1 = not na(cur_sz_unit_ex_1) and not na(v_gamma_ex_1) ? cur_sz_unit_ex_1 * v_gamma_ex_1 : na
-float last_f_p1_ex = not na(cur_p_sz_ex_1) ? fs_p1_ex.upd_filt(eff_h, eff_l, cur_p_sz_ex_1, init_p_val, is_p_anc) : na
-float last_f_v1_ex = not na(cur_v_sz_ex_1) ? fs_v1_ex.upd_filt(eff_h, eff_l, cur_v_sz_ex_1, init_v_val, is_v_anc) : na
+float last_f_p1_ex = not na(cur_p_sz_ex_1) ? fs_p1_ex.upd_filt(eff_h_m1, eff_l_m1, cur_p_sz_ex_1, init_p_val_m1, is_p_anc) : na
+float last_f_v1_ex = not na(cur_v_sz_ex_1) ? fs_v1_ex.upd_filt(eff_h_m1, eff_l_m1, cur_v_sz_ex_1, init_v_val_m1, is_v_anc) : na
 
-float last_f_p_2 = fs_p2.upd_filt(eff_h, eff_l, cur_p_sz_2, init_p_val, is_p_anc)
-float last_f_v_2 = fs_v2.upd_filt(eff_h, eff_l, cur_v_sz_2, init_v_val, is_v_anc)
+float last_f_p_2 = fs_p2.upd_filt(eff_h_m2, eff_l_m2, cur_p_sz_2, init_p_val_m2, is_p_anc)
+float last_f_v_2 = fs_v2.upd_filt(eff_h_m2, eff_l_m2, cur_v_sz_2, init_v_val_m2, is_v_anc)
 
 float cur_p_sz_ex_2 = not na(cur_sz_unit_ex_2) and not na(p_gamma_ex_2) ? cur_sz_unit_ex_2 * p_gamma_ex_2 : na
 float cur_v_sz_ex_2 = not na(cur_sz_unit_ex_2) and not na(v_gamma_ex_2) ? cur_sz_unit_ex_2 * v_gamma_ex_2 : na
-float last_f_p2_ex = not na(cur_p_sz_ex_2) ? fs_p2_ex.upd_filt(eff_h, eff_l, cur_p_sz_ex_2, init_p_val, is_p_anc) : na
-float last_f_v2_ex = not na(cur_v_sz_ex_2) ? fs_v2_ex.upd_filt(eff_h, eff_l, cur_v_sz_ex_2, init_v_val, is_v_anc) : na
+float last_f_p2_ex = not na(cur_p_sz_ex_2) ? fs_p2_ex.upd_filt(eff_h_m2, eff_l_m2, cur_p_sz_ex_2, init_p_val_m2, is_p_anc) : na
+float last_f_v2_ex = not na(cur_v_sz_ex_2) ? fs_v2_ex.upd_filt(eff_h_m2, eff_l_m2, cur_v_sz_ex_2, init_v_val_m2, is_v_anc) : na
 
 // Visualization
 var polyline[] p_pl = array.new<polyline>(0)
 var polyline[] v_pl = array.new<polyline>(0)
+var label[] cr_labels = array.new<label>(0)
 
 if barstate.islast
     for pl in p_pl
         polyline.delete(pl)
     for pl in v_pl
         polyline.delete(pl)
-    array.clear(p_pl), array.clear(v_pl)
+    for lb in cr_labels
+        label.delete(lb)
+    array.clear(p_pl), array.clear(v_pl), array.clear(cr_labels)
     
     int p_idx_u = settled_p_idx
     int v_idx_u = settled_v_idx
 
-    // --- DRAW ENGINE 1 ---
+    // --- COLORS ---
+    m1_transp = use_ha_m1 ? 60 : 0
+    m2_transp = use_ha_m2 ? 60 : 0
+
+    m1_c_y = color.new(color.yellow, m1_transp)
+    m1_c_r = color.new(color.red, m1_transp)
+    m1_c_g = color.new(color.green, m1_transp)
+
+    m2_c_y = color.new(color.yellow, m2_transp)
+    m2_c_r = color.new(color.red, m2_transp)
+    m2_c_g = color.new(color.green, m2_transp)
+
+    // --- DRAW ENGINE 1 PEAKS ---
+    is_allowed_tf = (timeframe.period == "1") or (timeframe.period == "3") or (timeframe.period == "5")
+    float[] v0_arr = array.new_float(0)
+
     if show_m1 and show_peak and not na(p_idx_u)
-        // Main
+        int s_idx = math.max(bar_index - 4990, p_idx_u)
+        float st = eff_h_m1[bar_index-s_idx]
+
+        // 1. Main Filter
         FiltState f_r = FiltState.new()
         chart.point[] pts = array.new<chart.point>(0)
         float cf = na, float pf = na
-        int s_idx = math.max(bar_index - 4990, p_idx_u)
-        float st = eff_h[bar_index-s_idx]
         for j = s_idx to bar_index
             off = bar_index - j
-            cf := f_r.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_1[off] * p_gamma_val, st, j == s_idx)
+            cf := f_r.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_1[off] * p_gamma_val, st, j == s_idx)
+            array.push(v0_arr, cf)
             if not na(pf) and math.abs(pf - cf) > (syminfo.mintick / 10)
                 array.push(pts, chart.point.from_index(j, pf))
             array.push(pts, chart.point.from_index(j, cf))
             pf := cf
         if array.size(pts) > 1
-            array.push(p_pl, polyline.new(pts, line_color=color.yellow, line_width=filt_width))
-        // Extra
-        if not na(p_gamma_ex_1) and not na(cur_sz_unit_ex_1)
-            FiltState f_re = FiltState.new()
-            chart.point[] ptse = array.new<chart.point>(0)
-            float cfe = na, float pfe = na
-            for j = s_idx to bar_index
-                off = bar_index - j
-                cfe := f_re.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex_1[off] * p_gamma_ex_1, st, j == s_idx)
-                if not na(pfe) and math.abs(pfe - cfe) > (syminfo.mintick / 10)
-                    array.push(ptse, chart.point.from_index(j, pfe))
-                array.push(ptse, chart.point.from_index(j, cfe))
-                pfe := cfe
-            if array.size(ptse) > 1
-                array.push(p_pl, polyline.new(ptse, line_color=color.red, line_width=filt_width))
-        // 2nd Extra (Motor 1 Only)
-        if not na(p_gamma_ex2_1) and not na(cur_sz_unit_ex2_1)
-            FiltState f_re2 = FiltState.new()
-            chart.point[] ptse2 = array.new<chart.point>(0)
-            float cfe2 = na, float pfe2 = na
-            for j = s_idx to bar_index
-                off = bar_index - j
-                cfe2 := f_re2.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex2_1[off] * p_gamma_ex2_1, st, j == s_idx)
-                if not na(pfe2) and math.abs(pfe2 - cfe2) > (syminfo.mintick / 10)
-                    array.push(ptse2, chart.point.from_index(j, pfe2))
-                array.push(ptse2, chart.point.from_index(j, cfe2))
-                pfe2 := cfe2
-            if array.size(ptse2) > 1
-                array.push(p_pl, polyline.new(ptse2, line_color=color.red, line_width=filt_width))
-        // 3rd Extra (Motor 1 Only)
-        if not na(p_gamma_ex3_1) and not na(cur_sz_unit_ex3_1)
-            FiltState f_re3 = FiltState.new()
-            chart.point[] ptse3 = array.new<chart.point>(0)
-            float cfe3 = na, float pfe3 = na
-            for j = s_idx to bar_index
-                off = bar_index - j
-                cfe3 := f_re3.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex3_1[off] * p_gamma_ex3_1, st, j == s_idx)
-                if not na(pfe3) and math.abs(pfe3 - cfe3) > (syminfo.mintick / 10)
-                    array.push(ptse3, chart.point.from_index(j, pfe3))
-                array.push(ptse3, chart.point.from_index(j, cfe3))
-                pfe3 := cfe3
-            if array.size(ptse3) > 1
-                array.push(p_pl, polyline.new(ptse3, line_color=color.red, line_width=filt_width))
+            array.push(p_pl, polyline.new(pts, line_color=m1_c_y, line_width=filt_width))
+
+        // 2. Extra Layers
+        f_draw_m1_peak_ex(p_gamma_ex_1, cur_sz_unit_ex_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels, p_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_peak_ex(p_gamma_ex2_1, cur_sz_unit_ex2_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels, p_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_peak_ex(p_gamma_ex3_1, cur_sz_unit_ex3_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels, p_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_peak_ex(p_gamma_ex4_1, cur_sz_unit_ex4_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels, p_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_peak_ex(p_gamma_ex5_1, cur_sz_unit_ex5_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels, p_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_peak_ex(p_gamma_ex6_1, cur_sz_unit_ex6_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels, p_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_peak_ex(p_gamma_ex7_1, cur_sz_unit_ex7_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels, p_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_peak_ex(p_gamma_ex8_1, cur_sz_unit_ex8_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels, p_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_peak_ex(p_gamma_ex9_1, cur_sz_unit_ex9_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels, p_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_peak_ex(p_gamma_ex10_1, cur_sz_unit_ex10_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels, p_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_peak_ex(p_gamma_ex11_1, cur_sz_unit_ex11_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels, p_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_peak_ex(p_gamma_ex12_1, cur_sz_unit_ex12_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels, p_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_peak_ex(p_gamma_ex13_1, cur_sz_unit_ex13_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels, p_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
 
     if show_m1 and show_valley and not na(v_idx_u)
-        // Main
+        int s_idx = math.max(bar_index - 4990, v_idx_u)
+        float st = eff_l_m1[bar_index-s_idx]
+        float[] v0_arr_v = array.new_float(0)
+
+        // 1. Main Filter
         FiltState f_r = FiltState.new()
         chart.point[] pts = array.new<chart.point>(0)
         float cf = na, float pf = na
-        int s_idx = math.max(bar_index - 4990, v_idx_u)
-        float st = eff_l[bar_index-s_idx]
         for j = s_idx to bar_index
             off = bar_index - j
-            cf := f_r.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_1[off] * v_gamma_val, st, j == s_idx)
+            cf := f_r.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_1[off] * v_gamma_val, st, j == s_idx)
+            array.push(v0_arr_v, cf)
             if not na(pf) and math.abs(pf - cf) > (syminfo.mintick / 10)
                 array.push(pts, chart.point.from_index(j, pf))
             array.push(pts, chart.point.from_index(j, cf))
             pf := cf
         if array.size(pts) > 1
-            array.push(v_pl, polyline.new(pts, line_color=color.yellow, line_width=filt_width))
-        // Extra
-        if not na(v_gamma_ex_1) and not na(cur_sz_unit_ex_1)
-            FiltState f_re = FiltState.new()
-            chart.point[] ptse = array.new<chart.point>(0)
-            float cfe = na, float pfe = na
-            for j = s_idx to bar_index
-                off = bar_index - j
-                cfe := f_re.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex_1[off] * v_gamma_ex_1, st, j == s_idx)
-                if not na(pfe) and math.abs(pfe - cfe) > (syminfo.mintick / 10)
-                    array.push(ptse, chart.point.from_index(j, pfe))
-                array.push(ptse, chart.point.from_index(j, cfe))
-                pfe := cfe
-            if array.size(ptse) > 1
-                array.push(v_pl, polyline.new(ptse, line_color=color.green, line_width=filt_width))
-        // 2nd Extra (Motor 1 Only)
-        if not na(v_gamma_ex2_1) and not na(cur_sz_unit_ex2_v1)
-            FiltState f_re2 = FiltState.new()
-            chart.point[] ptse2 = array.new<chart.point>(0)
-            float cfe2 = na, float pfe2 = na
-            for j = s_idx to bar_index
-                off = bar_index - j
-                cfe2 := f_re2.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex2_v1[off] * v_gamma_ex2_1, st, j == s_idx)
-                if not na(pfe2) and math.abs(pfe2 - cfe2) > (syminfo.mintick / 10)
-                    array.push(ptse2, chart.point.from_index(j, pfe2))
-                array.push(ptse2, chart.point.from_index(j, cfe2))
-                pfe2 := cfe2
-            if array.size(ptse2) > 1
-                array.push(v_pl, polyline.new(ptse2, line_color=color.green, line_width=filt_width))
-        // 3rd Extra (Motor 1 Only)
-        if not na(v_gamma_ex3_1) and not na(cur_sz_unit_ex3_1)
-            FiltState f_re3 = FiltState.new()
-            chart.point[] ptse3 = array.new<chart.point>(0)
-            float cfe3 = na, float pfe3 = na
-            for j = s_idx to bar_index
-                off = bar_index - j
-                cfe3 := f_re3.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex3_1[off] * v_gamma_ex3_1, st, j == s_idx)
-                if not na(pfe3) and math.abs(pfe3 - cfe3) > (syminfo.mintick / 10)
-                    array.push(ptse3, chart.point.from_index(j, pfe3))
-                array.push(ptse3, chart.point.from_index(j, cfe3))
-                pfe3 := cfe3
-            if array.size(ptse3) > 1
-                array.push(v_pl, polyline.new(ptse3, line_color=color.green, line_width=filt_width))
+            array.push(v_pl, polyline.new(pts, line_color=m1_c_y, line_width=filt_width))
+
+        // 2. Extra Layers
+        f_draw_m1_valley_ex(v_gamma_ex_1, cur_sz_unit_ex_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels, v_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_valley_ex(v_gamma_ex2_1, cur_sz_unit_ex2_v1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels, v_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_valley_ex(v_gamma_ex3_1, cur_sz_unit_ex3_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels, v_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_valley_ex(v_gamma_ex4_1, cur_sz_unit_ex4_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels, v_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_valley_ex(v_gamma_ex5_1, cur_sz_unit_ex5_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels, v_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_valley_ex(v_gamma_ex6_1, cur_sz_unit_ex6_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels, v_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_valley_ex(v_gamma_ex7_1, cur_sz_unit_ex7_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels, v_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_valley_ex(v_gamma_ex8_1, cur_sz_unit_ex8_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels, v_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_valley_ex(v_gamma_ex9_1, cur_sz_unit_ex9_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels, v_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_valley_ex(v_gamma_ex10_1, cur_sz_unit_ex10_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels, v_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_valley_ex(v_gamma_ex11_1, cur_sz_unit_ex11_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels, v_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_valley_ex(v_gamma_ex12_1, cur_sz_unit_ex12_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels, v_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_valley_ex(v_gamma_ex13_1, cur_sz_unit_ex13_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels, v_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
 
     // --- DRAW ENGINE 2 ---
     if show_m2 and show_peak and not na(p_idx_u)
@@ -405,16 +899,16 @@ if barstate.islast
         chart.point[] pts = array.new<chart.point>(0)
         float cf = na, float pf = na
         int s_idx = math.max(bar_index - 4990, p_idx_u)
-        float st = eff_h[bar_index-s_idx]
+        float st = eff_h_m2[bar_index-s_idx]
         for j = s_idx to bar_index
             off = bar_index - j
-            cf := f_r.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_2[off] * p_gamma_val_2, st, j == s_idx)
+            cf := f_r.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_2[off] * p_gamma_val_2, st, j == s_idx)
             if not na(pf) and math.abs(pf - cf) > (syminfo.mintick / 10)
                 array.push(pts, chart.point.from_index(j, pf))
             array.push(pts, chart.point.from_index(j, cf))
             pf := cf
         if array.size(pts) > 1
-            array.push(p_pl, polyline.new(pts, line_color=color.yellow, line_width=filt_width))
+            array.push(p_pl, polyline.new(pts, line_color=m2_c_y, line_width=filt_width))
         // Extra
         if not na(p_gamma_ex_2) and not na(cur_sz_unit_ex_2)
             FiltState f_re = FiltState.new()
@@ -422,13 +916,69 @@ if barstate.islast
             float cfe = na, float pfe = na
             for j = s_idx to bar_index
                 off = bar_index - j
-                cfe := f_re.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex_2[off] * p_gamma_ex_2, st, j == s_idx)
+                cfe := f_re.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_ex_2[off] * p_gamma_ex_2, st, j == s_idx)
                 if not na(pfe) and math.abs(pfe - cfe) > (syminfo.mintick / 10)
                     array.push(ptse, chart.point.from_index(j, pfe))
                 array.push(ptse, chart.point.from_index(j, cfe))
                 pfe := cfe
             if array.size(ptse) > 1
-                array.push(p_pl, polyline.new(ptse, line_color=color.red, line_width=filt_width))
+                array.push(p_pl, polyline.new(ptse, line_color=m2_c_r, line_width=filt_width))
+        // 2nd Extra (Motor 2)
+        if not na(p_gamma_ex2_2) and not na(cur_sz_unit_ex2_2)
+            FiltState f_re2 = FiltState.new()
+            chart.point[] ptse2 = array.new<chart.point>(0)
+            float cfe2 = na, float pfe2 = na
+            for j = s_idx to bar_index
+                off = bar_index - j
+                cfe2 := f_re2.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_ex2_2[off] * p_gamma_ex2_2, st, j == s_idx)
+                if not na(pfe2) and math.abs(pfe2 - cfe2) > (syminfo.mintick / 10)
+                    array.push(ptse2, chart.point.from_index(j, pfe2))
+                array.push(ptse2, chart.point.from_index(j, cfe2))
+                pfe2 := cfe2
+            if array.size(ptse2) > 1
+                array.push(p_pl, polyline.new(ptse2, line_color=m2_c_r, line_width=filt_width))
+        // 3rd Extra (Motor 2)
+        if not na(p_gamma_ex3_2) and not na(cur_sz_unit_ex3_2)
+            FiltState f_re3 = FiltState.new()
+            chart.point[] ptse3 = array.new<chart.point>(0)
+            float cfe3 = na, float pfe3 = na
+            for j = s_idx to bar_index
+                off = bar_index - j
+                cfe3 := f_re3.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_ex3_2[off] * p_gamma_ex3_2, st, j == s_idx)
+                if not na(pfe3) and math.abs(pfe3 - cfe3) > (syminfo.mintick / 10)
+                    array.push(ptse3, chart.point.from_index(j, pfe3))
+                array.push(ptse3, chart.point.from_index(j, cfe3))
+                pfe3 := cfe3
+            if array.size(ptse3) > 1
+                array.push(p_pl, polyline.new(ptse3, line_color=m2_c_r, line_width=filt_width))
+        // 4th Extra (Motor 2)
+        if not na(p_gamma_ex4_2) and not na(cur_sz_unit_ex4_2)
+            FiltState f_re4 = FiltState.new()
+            chart.point[] ptse4 = array.new<chart.point>(0)
+            float cfe4 = na, float pfe4 = na
+            for j = s_idx to bar_index
+                off = bar_index - j
+                cfe4 := f_re4.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_ex4_2[off] * p_gamma_ex4_2, st, j == s_idx)
+                if not na(pfe4) and math.abs(pfe4 - cfe4) > (syminfo.mintick / 10)
+                    array.push(ptse4, chart.point.from_index(j, pfe4))
+                array.push(ptse4, chart.point.from_index(j, cfe4))
+                pfe4 := cfe4
+            if array.size(ptse4) > 1
+                array.push(p_pl, polyline.new(ptse4, line_color=m2_c_r, line_width=filt_width))
+        // 5th Extra (Motor 2)
+        if not na(p_gamma_ex5_2) and not na(cur_sz_unit_ex5_2)
+            FiltState f_re5 = FiltState.new()
+            chart.point[] ptse5 = array.new<chart.point>(0)
+            float cfe5 = na, float pfe5 = na
+            for j = s_idx to bar_index
+                off = bar_index - j
+                cfe5 := f_re5.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_ex5_2[off] * p_gamma_ex5_2, st, j == s_idx)
+                if not na(pfe5) and math.abs(pfe5 - cfe5) > (syminfo.mintick / 10)
+                    array.push(ptse5, chart.point.from_index(j, pfe5))
+                array.push(ptse5, chart.point.from_index(j, cfe5))
+                pfe5 := cfe5
+            if array.size(ptse5) > 1
+                array.push(p_pl, polyline.new(ptse5, line_color=m2_c_r, line_width=filt_width))
 
     if show_m2 and show_valley and not na(v_idx_u)
         // Main
@@ -436,16 +986,16 @@ if barstate.islast
         chart.point[] pts = array.new<chart.point>(0)
         float cf = na, float pf = na
         int s_idx = math.max(bar_index - 4990, v_idx_u)
-        float st = eff_l[bar_index-s_idx]
+        float st = eff_l_m2[bar_index-s_idx]
         for j = s_idx to bar_index
             off = bar_index - j
-            cf := f_r.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_2[off] * v_gamma_val_2, st, j == s_idx)
+            cf := f_r.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_2[off] * v_gamma_val_2, st, j == s_idx)
             if not na(pf) and math.abs(pf - cf) > (syminfo.mintick / 10)
                 array.push(pts, chart.point.from_index(j, pf))
             array.push(pts, chart.point.from_index(j, cf))
             pf := cf
         if array.size(pts) > 1
-            array.push(v_pl, polyline.new(pts, line_color=color.yellow, line_width=filt_width))
+            array.push(v_pl, polyline.new(pts, line_color=m2_c_y, line_width=filt_width))
         // Extra
         if not na(v_gamma_ex_2) and not na(cur_sz_unit_ex_2)
             FiltState f_re = FiltState.new()
@@ -453,13 +1003,69 @@ if barstate.islast
             float cfe = na, float pfe = na
             for j = s_idx to bar_index
                 off = bar_index - j
-                cfe := f_re.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex_2[off] * v_gamma_ex_2, st, j == s_idx)
+                cfe := f_re.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_ex_2[off] * v_gamma_ex_2, st, j == s_idx)
                 if not na(pfe) and math.abs(pfe - cfe) > (syminfo.mintick / 10)
                     array.push(ptse, chart.point.from_index(j, pfe))
                 array.push(ptse, chart.point.from_index(j, cfe))
                 pfe := cfe
             if array.size(ptse) > 1
-                array.push(v_pl, polyline.new(ptse, line_color=color.green, line_width=filt_width))
+                array.push(v_pl, polyline.new(ptse, line_color=m2_c_g, line_width=filt_width))
+        // 2nd Extra (Motor 2)
+        if not na(v_gamma_ex2_2) and not na(cur_sz_unit_ex2_2)
+            FiltState f_re2 = FiltState.new()
+            chart.point[] ptse2 = array.new<chart.point>(0)
+            float cfe2 = na, float pfe2 = na
+            for j = s_idx to bar_index
+                off = bar_index - j
+                cfe2 := f_re2.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_ex2_2[off] * v_gamma_ex2_2, st, j == s_idx)
+                if not na(pfe2) and math.abs(pfe2 - cfe2) > (syminfo.mintick / 10)
+                    array.push(ptse2, chart.point.from_index(j, pfe2))
+                array.push(ptse2, chart.point.from_index(j, cfe2))
+                pfe2 := cfe2
+            if array.size(ptse2) > 1
+                array.push(v_pl, polyline.new(ptse2, line_color=m2_c_g, line_width=filt_width))
+        // 3rd Extra (Motor 2)
+        if not na(v_gamma_ex3_2) and not na(cur_sz_unit_ex3_2)
+            FiltState f_re3 = FiltState.new()
+            chart.point[] ptse3 = array.new<chart.point>(0)
+            float cfe3 = na, float pfe3 = na
+            for j = s_idx to bar_index
+                off = bar_index - j
+                cfe3 := f_re3.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_ex3_2[off] * v_gamma_ex3_2, st, j == s_idx)
+                if not na(pfe3) and math.abs(pfe3 - cfe3) > (syminfo.mintick / 10)
+                    array.push(ptse3, chart.point.from_index(j, pfe3))
+                array.push(ptse3, chart.point.from_index(j, cfe3))
+                pfe3 := cfe3
+            if array.size(ptse3) > 1
+                array.push(v_pl, polyline.new(ptse3, line_color=m2_c_g, line_width=filt_width))
+        // 4th Extra (Motor 2)
+        if not na(v_gamma_ex4_2) and not na(cur_sz_unit_ex4_2)
+            FiltState f_re4 = FiltState.new()
+            chart.point[] ptse4 = array.new<chart.point>(0)
+            float cfe4 = na, float pfe4 = na
+            for j = s_idx to bar_index
+                off = bar_index - j
+                cfe4 := f_re4.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_ex4_2[off] * v_gamma_ex4_2, st, j == s_idx)
+                if not na(pfe4) and math.abs(pfe4 - cfe4) > (syminfo.mintick / 10)
+                    array.push(ptse4, chart.point.from_index(j, pfe4))
+                array.push(ptse4, chart.point.from_index(j, cfe4))
+                pfe4 := cfe4
+            if array.size(ptse4) > 1
+                array.push(v_pl, polyline.new(ptse4, line_color=m2_c_g, line_width=filt_width))
+        // 5th Extra (Motor 2)
+        if not na(v_gamma_ex5_2) and not na(cur_sz_unit_ex5_2)
+            FiltState f_re5 = FiltState.new()
+            chart.point[] ptse5 = array.new<chart.point>(0)
+            float cfe5 = na, float pfe5 = na
+            for j = s_idx to bar_index
+                off = bar_index - j
+                cfe5 := f_re5.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_ex5_2[off] * v_gamma_ex5_2, st, j == s_idx)
+                if not na(pfe5) and math.abs(pfe5 - cfe5) > (syminfo.mintick / 10)
+                    array.push(ptse5, chart.point.from_index(j, pfe5))
+                array.push(ptse5, chart.point.from_index(j, cfe5))
+                pfe5 := cfe5
+            if array.size(ptse5) > 1
+                array.push(v_pl, polyline.new(ptse5, line_color=m2_c_g, line_width=filt_width))
 
 // Table
 if show_table and barstate.islast
@@ -496,6 +1102,54 @@ if show_table and barstate.islast
         table.cell(info_tab, cur_col, 5, extra_layer_conn_2, bgcolor=color.new(color.gray, 90), text_color=c_txt)
         table.cell(info_tab, cur_col, 6, "Aktif", bgcolor=color.new(color.green, 70), text_color=c_txt)
 
+// --- CROSSOVER SCANNING EXECUTION ---
+var float m1_1m_p_idx = 0.0, var float m1_1m_p_dir = 0.0, var float m1_1m_p_bar = 0.0
+var float m1_1m_v_idx = 0.0, var float m1_1m_v_dir = 0.0, var float m1_1m_v_bar = 0.0
+var float m1_1m_cur_idx = 0.0
+
+var float m1_3m_p_idx = 0.0, var float m1_3m_p_dir = 0.0, var float m1_3m_p_bar = 0.0
+var float m1_3m_v_idx = 0.0, var float m1_3m_v_dir = 0.0, var float m1_3m_v_bar = 0.0
+var float m1_3m_cur_idx = 0.0
+
+var float m1_5m_p_idx = 0.0, var float m1_5m_p_dir = 0.0, var float m1_5m_p_bar = 0.0
+var float m1_5m_v_idx = 0.0, var float m1_5m_v_dir = 0.0, var float m1_5m_v_bar = 0.0
+var float m1_5m_cur_idx = 0.0
+
+if enable_cr
+    [i1_p, d1_p, b1_p, i1_v, d1_v, b1_v, c1] = request.security(syminfo.tickerid, "1", f_m1_crossover_scanner())
+    m1_1m_p_idx := i1_p, m1_1m_p_dir := d1_p, m1_1m_p_bar := b1_p
+    m1_1m_v_idx := i1_v, m1_1m_v_dir := d1_v, m1_1m_v_bar := b1_v
+    m1_1m_cur_idx := c1
+
+    [i3_p, d3_p, b3_p, i3_v, d3_v, b3_v, c3] = request.security(syminfo.tickerid, "3", f_m1_crossover_scanner())
+    m1_3m_p_idx := i3_p, m1_3m_p_dir := d3_p, m1_3m_p_bar := b3_p
+    m1_3m_v_idx := i3_v, m1_3m_v_dir := d3_v, m1_3m_v_bar := b3_v
+    m1_3m_cur_idx := c3
+
+    [i5_p, d5_p, b5_p, i5_v, d5_v, b5_v, c5] = request.security(syminfo.tickerid, "5", f_m1_crossover_scanner())
+    m1_5m_p_idx := i5_p, m1_5m_p_dir := d5_p, m1_5m_p_bar := b5_p
+    m1_5m_v_idx := i5_v, m1_5m_v_dir := d5_v, m1_5m_v_bar := b5_v
+    m1_5m_cur_idx := c5
+
+// --- CROSSOVER TABLE ---
+if enable_cr and barstate.islast
+    cpos = cr_table_pos == "Top Right" ? position.top_right : cr_table_pos == "Bottom Right" ? position.bottom_right : cr_table_pos == "Top Left" ? position.top_left : cr_table_pos == "Bottom Left" ? position.bottom_left : position.middle_right
+    var table cr_tab = table.new(cpos, 4, 7, border_width=1, border_color=color.gray, frame_width=1, frame_color=color.gray)
+    c_bg = color.new(color.black, 40), c_txt = color.white
+
+    table.cell(cr_tab, 0, 0, "TF", bgcolor=c_bg, text_color=color.yellow)
+    table.cell(cr_tab, 1, 0, "Katman", bgcolor=c_bg, text_color=color.yellow)
+    table.cell(cr_tab, 2, 0, "Yön", bgcolor=c_bg, text_color=color.yellow)
+    table.cell(cr_tab, 3, 0, "Bar Önce", bgcolor=c_bg, text_color=color.yellow)
+
+    f_fill_cr_row(cr_tab, 1, "1m P", m1_1m_p_idx, m1_1m_p_dir, m1_1m_p_bar, m1_1m_cur_idx)
+    f_fill_cr_row(cr_tab, 2, "1m V", m1_1m_v_idx, m1_1m_v_dir, m1_1m_v_bar, m1_1m_cur_idx)
+    f_fill_cr_row(cr_tab, 3, "3m P", m1_3m_p_idx, m1_3m_p_dir, m1_3m_p_bar, m1_3m_cur_idx)
+    f_fill_cr_row(cr_tab, 4, "3m V", m1_3m_v_idx, m1_3m_v_dir, m1_3m_v_bar, m1_3m_cur_idx)
+    f_fill_cr_row(cr_tab, 5, "5m P", m1_5m_p_idx, m1_5m_p_dir, m1_5m_p_bar, m1_5m_cur_idx)
+    f_fill_cr_row(cr_tab, 6, "5m V", m1_5m_v_idx, m1_5m_v_dir, m1_5m_v_bar, m1_5m_cur_idx)
+
+
 // Labels (Shared)
 var label lp = na, var label lv = na
 if barstate.islast
@@ -503,12 +1157,12 @@ if barstate.islast
     if not na(p_idx_label)
         int h_off = math.max(0, math.min(4999, bar_index - p_idx_label))
         if na(lp)
-            lp := label.new(p_idx_label, eff_h[h_off], "⚓ Tepe", color=color.red, textcolor=color.white, style=label.style_label_down)
+            lp := label.new(p_idx_label, eff_h_anc[h_off], "⚓ Tepe", color=color.red, textcolor=color.white, style=label.style_label_down)
         else
-            label.set_xy(lp, p_idx_label, eff_h[h_off])
+            label.set_xy(lp, p_idx_label, eff_h_anc[h_off])
     if not na(v_idx_label)
         int v_off = math.max(0, math.min(4999, bar_index - v_idx_label))
         if na(lv)
-            lv := label.new(v_idx_label, eff_l[v_off], "⚓ Dip", color=color.green, textcolor=color.white, style=label.style_label_up)
+            lv := label.new(v_idx_label, eff_l_anc[v_off], "⚓ Dip", color=color.green, textcolor=color.white, style=label.style_label_up)
         else
-            label.set_xy(lv, v_idx_label, eff_l[v_off])
+            label.set_xy(lv, v_idx_label, eff_l_anc[v_off])
