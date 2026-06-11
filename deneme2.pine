@@ -23,6 +23,7 @@ p_gamma_val      = input.float(9.42477796076938, "Motor 1: Tepe Gamma", options=
 v_gamma_val      = input.float(9.42477796076938, "Motor 1: Dip Gamma", options=[1.5707963267948966, 3.141592653589793, 4.71238898038469, 6.283185307179586, 7.853981633974483, 9.42477796076938, 10.995574287564276, 12.566370614359172, 14.137166941154069, 15.707963267948966, 17.27875959474386, 18.84955592153876, 20.420352248333657, 21.991148575128552, 23.561944901923447, 25.132741228718345, 26.703537555513243, 28.274333882308138, 29.845130209103033, 31.41592653589793, 47.12388980384689, 62.83185307179586, 78.53981633974483, 94.24777960769379, 109.95574287564276, 125.66370614359172, 141.3716694115407], group=GRP_M1)
 atr_mult         = input.float(3.1415926535897932, "Motor 1: ATR Çarpanı", options=[0.0000031415926535897932, 0.000031415926535897932, 0.00031415926535897932, 0.0031415926535897932, 0.031415926535897932, 0.31415926535897932, 3.1415926535897932, 31.415926535897932, 314.15926535897932, 3141.5926535897932], group=GRP_M1)
 extra_layer_conn = input.string("ATR Çarpanı", "Motor 1: Ek Katman Bağlantısı", options=["ATR Çarpanı", "Gamma"], group=GRP_M1)
+use_ha_m1        = input.bool(false, "Motor 1: Heikin Ashi Kullan / Use HA", group=GRP_M1)
 
 // --- MOTOR 2 GİRDİLERİ ---
 show_m2          = input.bool(true, "Motor 2'yi Aktifleştir / Enable Motor 2", group=GRP_M2)
@@ -30,13 +31,13 @@ p_gamma_val_2      = input.float(9.42477796076938, "Motor 2: Tepe Gamma", option
 v_gamma_val_2      = input.float(9.42477796076938, "Motor 2: Dip Gamma", options=[1.5707963267948966, 3.141592653589793, 4.71238898038469, 6.283185307179586, 7.853981633974483, 9.42477796076938, 10.995574287564276, 12.566370614359172, 14.137166941154069, 15.707963267948966, 17.27875959474386, 18.84955592153876, 20.420352248333657, 21.991148575128552, 23.561944901923447, 25.132741228718345, 26.703537555513243, 28.274333882308138, 29.845130209103033, 31.41592653589793, 47.12388980384689, 62.83185307179586, 78.53981633974483, 94.24777960769379, 109.95574287564276, 125.66370614359172, 141.3716694115407], group=GRP_M2)
 atr_mult_2         = input.float(31.415926535897932, "Motor 2: ATR Çarpanı", options=[0.0000031415926535897932, 0.000031415926535897932, 0.00031415926535897932, 0.0031415926535897932, 0.031415926535897932, 0.31415926535897932, 3.1415926535897932, 31.415926535897932, 314.15926535897932, 3141.5926535897932], group=GRP_M2)
 extra_layer_conn_2 = input.string("ATR Çarpanı", "Motor 2: Ek Katman Bağlantısı", options=["ATR Çarpanı", "Gamma"], group=GRP_M2)
+use_ha_m2        = input.bool(false, "Motor 2: Heikin Ashi Kullan / Use HA", group=GRP_M2)
 
 // --- ORTAK GÖRSEL AYARLAR ---
 auto_atr       = input.bool(true, "Otomatik ATR Periyodu / Auto ATR Period", group=GRP_VIS)
 atr_opt        = input.float(8.1, "Manuel ATR Periyodu / Manual ATR Period", minval=0.01, maxval=4990.0, step=0.1, group=GRP_VIS)
 show_peak      = input.bool(true, "Tepe Filtresini Göster / Show Peak Filter", group=GRP_VIS)
 show_valley    = input.bool(true, "Dip Filtresini Göster / Show Valley Filter", group=GRP_VIS)
-use_ha         = input.bool(false, "Heikin Ashi Hesaplaması Kullan / Use Heikin Ashi Calculation", group=GRP_VIS)
 filt_width     = input.int(2, "Çizgi Kalınlığı / Line Width", minval=1, maxval=5, group=GRP_VIS)
 
 show_table     = input.bool(true, "Bilgi Tablosunu Göster / Show Info Table", group=GRP_TAB)
@@ -89,6 +90,11 @@ method upd_filt(FiltState s, float h, float l, float r, float init_val, bool res
     s.rfilt
 
 // --- HESAPLAMA AKIŞI / CALCULATION FLOW ---
+// Anchor Prices (Always Standard)
+eff_h_anc = high
+eff_l_anc = low
+eff_c_anc = close
+
 // Heikin Ashi Calculation
 var float haOpen = na
 haClose = (open + high + low + close) / 4
@@ -96,10 +102,20 @@ haOpen := na(haOpen[1]) ? (open + close) / 2 : (haOpen[1] + haClose[1]) / 2
 haHigh = math.max(high, math.max(haOpen, haClose))
 haLow  = math.min(low,  math.min(haOpen, haClose))
 
-eff_h  = use_ha ? haHigh : high
-eff_l  = use_ha ? haLow  : low
-eff_c  = use_ha ? haClose : close
-float tr = use_ha ? math.max(haHigh - haLow, math.max(math.abs(haHigh - haClose[1]), math.abs(haLow - haClose[1]))) : ta.tr(true)
+// Motor-specific Prices
+eff_h_m1 = use_ha_m1 ? haHigh : high
+eff_l_m1 = use_ha_m1 ? haLow  : low
+eff_c_m1 = use_ha_m1 ? haClose : close
+
+eff_h_m2 = use_ha_m2 ? haHigh : high
+eff_l_m2 = use_ha_m2 ? haLow  : low
+eff_c_m2 = use_ha_m2 ? haClose : close
+
+// True Ranges
+float tr_std = ta.tr(true)
+float tr_ha  = math.max(haHigh - haLow, math.max(math.abs(haHigh - haClose[1]), math.abs(haLow - haClose[1])))
+float tr_m1  = use_ha_m1 ? tr_ha : tr_std
+float tr_m2  = use_ha_m2 ? tr_ha : tr_std
 
 int lb_input_val = lb_mode == "Global (Maksimum)" ? 4990 : lb_mode == "Otomatik (Hassasiyet)" ? lb_sens * 144 : auto_lookback
 
@@ -111,7 +127,7 @@ bool is_in_range = (lb_mode == "Global (Maksimum)") or
 
 // Engine 1 Parameters
 float atr_per_1 = math.min(4990.0, auto_atr ? (timeframe.in_seconds() / 60.0) * atr_mult : atr_opt)
-float cur_sz_unit_1_raw = f_kama_atr(tr, nz(atr_per_1, 8.1))
+float cur_sz_unit_1_raw = f_kama_atr(tr_m1, nz(atr_per_1, 8.1))
 float cur_sz_unit_1 = is_in_range ? cur_sz_unit_1_raw : 0.0
 
 float atr_mult_ex_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 10.0 : atr_mult
@@ -119,7 +135,7 @@ if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex_1 > 3141.5926535897932 +
     atr_mult_ex_1 := na
 
 float atr_per_ex_1 = not na(atr_mult_ex_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex_1) : na
-float cur_sz_unit_ex_1_raw = f_kama_atr(tr, nz(atr_per_ex_1, 8.1))
+float cur_sz_unit_ex_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex_1, 8.1))
 float cur_sz_unit_ex_1 = is_in_range and not na(atr_per_ex_1) ? cur_sz_unit_ex_1_raw : na
 
 // Motor 1: 2nd Extra Peak Parameters
@@ -127,7 +143,7 @@ float atr_mult_ex2_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 100.0 : 
 if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex2_1 > 3141.5926535897932 + 1.0)
     atr_mult_ex2_1 := na
 float atr_per_ex2_1 = not na(atr_mult_ex2_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex2_1) : na
-float cur_sz_unit_ex2_1_raw = f_kama_atr(tr, nz(atr_per_ex2_1, 8.1))
+float cur_sz_unit_ex2_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex2_1, 8.1))
 float cur_sz_unit_ex2_1 = is_in_range and not na(atr_per_ex2_1) ? cur_sz_unit_ex2_1_raw : na
 
 // Motor 1: 3rd Extra Peak Parameters
@@ -135,7 +151,7 @@ float atr_mult_ex3_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 1000.0 :
 if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex3_1 > 3141.5926535897932 + 1.0)
     atr_mult_ex3_1 := na
 float atr_per_ex3_1 = not na(atr_mult_ex3_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex3_1) : na
-float cur_sz_unit_ex3_1_raw = f_kama_atr(tr, nz(atr_per_ex3_1, 8.1))
+float cur_sz_unit_ex3_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex3_1, 8.1))
 float cur_sz_unit_ex3_1 = is_in_range and not na(atr_per_ex3_1) ? cur_sz_unit_ex3_1_raw : na
 
 // Motor 1: 4th Extra Peak Parameters
@@ -143,7 +159,7 @@ float atr_mult_ex4_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 10000.0 
 if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex4_1 > 3141.5926535897932 + 1.0)
     atr_mult_ex4_1 := na
 float atr_per_ex4_1 = not na(atr_mult_ex4_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex4_1) : na
-float cur_sz_unit_ex4_1_raw = f_kama_atr(tr, nz(atr_per_ex4_1, 8.1))
+float cur_sz_unit_ex4_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex4_1, 8.1))
 float cur_sz_unit_ex4_1 = is_in_range and not na(atr_per_ex4_1) ? cur_sz_unit_ex4_1_raw : na
 
 // Motor 1: 5th Extra Peak Parameters
@@ -151,7 +167,7 @@ float atr_mult_ex5_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 100000.0
 if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex5_1 > 3141.5926535897932 + 1.0)
     atr_mult_ex5_1 := na
 float atr_per_ex5_1 = not na(atr_mult_ex5_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex5_1) : na
-float cur_sz_unit_ex5_1_raw = f_kama_atr(tr, nz(atr_per_ex5_1, 8.1))
+float cur_sz_unit_ex5_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex5_1, 8.1))
 float cur_sz_unit_ex5_1 = is_in_range and not na(atr_per_ex5_1) ? cur_sz_unit_ex5_1_raw : na
 
 float p_gamma_ex_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 1.5707963267948966 : p_gamma_val
@@ -187,7 +203,7 @@ if extra_layer_conn == "Gamma" and (v_gamma_ex5_1 > 141.3716694115407 + 0.1)
 
 // Engine 2 Parameters
 float atr_per_2 = math.min(4990.0, auto_atr ? (timeframe.in_seconds() / 60.0) * atr_mult_2 : atr_opt)
-float cur_sz_unit_2_raw = f_kama_atr(tr, nz(atr_per_2, 8.1))
+float cur_sz_unit_2_raw = f_kama_atr(tr_m2, nz(atr_per_2, 8.1))
 float cur_sz_unit_2 = is_in_range ? cur_sz_unit_2_raw : 0.0
 
 float atr_mult_ex_2 = extra_layer_conn_2 == "ATR Çarpanı" ? atr_mult_2 * 10.0 : atr_mult_2
@@ -195,7 +211,7 @@ if extra_layer_conn_2 == "ATR Çarpanı" and (atr_mult_ex_2 > 3141.5926535897932
     atr_mult_ex_2 := na
 
 float atr_per_ex_2 = not na(atr_mult_ex_2) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex_2) : na
-float cur_sz_unit_ex_2_raw = f_kama_atr(tr, nz(atr_per_ex_2, 8.1))
+float cur_sz_unit_ex_2_raw = f_kama_atr(tr_m2, nz(atr_per_ex_2, 8.1))
 float cur_sz_unit_ex_2 = is_in_range and not na(atr_per_ex_2) ? cur_sz_unit_ex_2_raw : na
 
 // Motor 2: 2nd Extra Parameters
@@ -203,7 +219,7 @@ float atr_mult_ex2_2 = extra_layer_conn_2 == "ATR Çarpanı" ? atr_mult_2 * 100.
 if extra_layer_conn_2 == "ATR Çarpanı" and (atr_mult_ex2_2 > 3141.5926535897932 + 1.0)
     atr_mult_ex2_2 := na
 float atr_per_ex2_2 = not na(atr_mult_ex2_2) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex2_2) : na
-float cur_sz_unit_ex2_2_raw = f_kama_atr(tr, nz(atr_per_ex2_2, 8.1))
+float cur_sz_unit_ex2_2_raw = f_kama_atr(tr_m2, nz(atr_per_ex2_2, 8.1))
 float cur_sz_unit_ex2_2 = is_in_range and not na(atr_per_ex2_2) ? cur_sz_unit_ex2_2_raw : na
 
 // Motor 2: 3rd Extra Parameters
@@ -211,7 +227,7 @@ float atr_mult_ex3_2 = extra_layer_conn_2 == "ATR Çarpanı" ? atr_mult_2 * 1000
 if extra_layer_conn_2 == "ATR Çarpanı" and (atr_mult_ex3_2 > 3141.5926535897932 + 1.0)
     atr_mult_ex3_2 := na
 float atr_per_ex3_2 = not na(atr_mult_ex3_2) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex3_2) : na
-float cur_sz_unit_ex3_2_raw = f_kama_atr(tr, nz(atr_per_ex3_2, 8.1))
+float cur_sz_unit_ex3_2_raw = f_kama_atr(tr_m2, nz(atr_per_ex3_2, 8.1))
 float cur_sz_unit_ex3_2 = is_in_range and not na(atr_per_ex3_2) ? cur_sz_unit_ex3_2_raw : na
 
 // Motor 2: 4th Extra Parameters
@@ -219,7 +235,7 @@ float atr_mult_ex4_2 = extra_layer_conn_2 == "ATR Çarpanı" ? atr_mult_2 * 1000
 if extra_layer_conn_2 == "ATR Çarpanı" and (atr_mult_ex4_2 > 3141.5926535897932 + 1.0)
     atr_mult_ex4_2 := na
 float atr_per_ex4_2 = not na(atr_mult_ex4_2) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex4_2) : na
-float cur_sz_unit_ex4_2_raw = f_kama_atr(tr, nz(atr_per_ex4_2, 8.1))
+float cur_sz_unit_ex4_2_raw = f_kama_atr(tr_m2, nz(atr_per_ex4_2, 8.1))
 float cur_sz_unit_ex4_2 = is_in_range and not na(atr_per_ex4_2) ? cur_sz_unit_ex4_2_raw : na
 
 // Motor 2: 5th Extra Parameters
@@ -227,7 +243,7 @@ float atr_mult_ex5_2 = extra_layer_conn_2 == "ATR Çarpanı" ? atr_mult_2 * 1000
 if extra_layer_conn_2 == "ATR Çarpanı" and (atr_mult_ex5_2 > 3141.5926535897932 + 1.0)
     atr_mult_ex5_2 := na
 float atr_per_ex5_2 = not na(atr_mult_ex5_2) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex5_2) : na
-float cur_sz_unit_ex5_2_raw = f_kama_atr(tr, nz(atr_per_ex5_2, 8.1))
+float cur_sz_unit_ex5_2_raw = f_kama_atr(tr_m2, nz(atr_per_ex5_2, 8.1))
 float cur_sz_unit_ex5_2 = is_in_range and not na(atr_per_ex5_2) ? cur_sz_unit_ex5_2_raw : na
 
 float p_gamma_ex_2 = extra_layer_conn_2 == "Gamma" ? p_gamma_val_2 + 1.5707963267948966 : p_gamma_val_2
@@ -265,7 +281,7 @@ if extra_layer_conn_2 == "Gamma" and (v_gamma_ex5_2 > 141.3716694115407 + 0.1)
 max_bars_back(cur_sz_unit_1, 5000)
 max_bars_back(cur_sz_unit_ex_1, 5000)
 max_bars_back(cur_sz_unit_ex2_1, 5000)
-float cur_sz_unit_ex2_v1_raw = f_kama_atr(tr, nz(atr_per_ex2_1, 8.1))
+float cur_sz_unit_ex2_v1_raw = f_kama_atr(tr_m1, nz(atr_per_ex2_1, 8.1))
 float cur_sz_unit_ex2_v1 = is_in_range and not na(atr_per_ex2_1) ? cur_sz_unit_ex2_v1_raw : na
 max_bars_back(cur_sz_unit_ex2_v1, 5000)
 max_bars_back(cur_sz_unit_ex3_1, 5000)
@@ -281,9 +297,15 @@ max_bars_back(high, 5000)
 max_bars_back(low, 5000)
 max_bars_back(close, 5000)
 max_bars_back(time, 5000)
-max_bars_back(eff_h, 5000)
-max_bars_back(eff_l, 5000)
-max_bars_back(eff_c, 5000)
+max_bars_back(eff_h_anc, 5000)
+max_bars_back(eff_l_anc, 5000)
+max_bars_back(eff_c_anc, 5000)
+max_bars_back(eff_h_m1, 5000)
+max_bars_back(eff_l_m1, 5000)
+max_bars_back(eff_c_m1, 5000)
+max_bars_back(eff_h_m2, 5000)
+max_bars_back(eff_l_m2, 5000)
+max_bars_back(eff_c_m2, 5000)
 
 // 3. Anchor & Lookback State (Shared)
 int lb_input = lb_input_val
@@ -291,8 +313,8 @@ int eff_lb = math.min(math.max(1, lb_input), bar_index + 1)
 f_dyn_hb(src, len) => ta.highestbars(src, math.min(len, bar_index + 1))
 f_dyn_lb(src, len) => ta.lowestbars(src, math.min(len, bar_index + 1))
 
-hb_4990 = f_dyn_hb(eff_h, 4990), lb_4990 = f_dyn_lb(eff_l, 4990)
-hb_auto = f_dyn_hb(eff_h, lb_input), lb_auto = f_dyn_lb(eff_l, lb_input)
+hb_4990 = f_dyn_hb(eff_h_anc, 4990), lb_4990 = f_dyn_lb(eff_l_anc, 4990)
+hb_auto = f_dyn_hb(eff_h_anc, lb_input), lb_auto = f_dyn_lb(eff_l_anc, lb_input)
 
 // Final Sizes for Engines
 float cur_p_sz_1 = cur_sz_unit_1 * p_gamma_val
@@ -322,8 +344,8 @@ f_get_settled_idx(bool is_peak, int lb_mode_idx, int lb_val, float prev_f, float
 
 int lb_mode_idx = lb_mode == "Global (Maksimum)" ? 0 : 1
 if is_in_range
-    settled_p_idx := lb_mode == "Manuel (Tarih Seçimi)" ? na : f_get_settled_idx(true, lb_mode_idx, lb_input, last_f_p_1, cur_p_sz_1, settled_p_idx, eff_h, eff_l, eff_c, hb_4990, lb_4990, hb_auto, lb_auto)
-    settled_v_idx := lb_mode == "Manuel (Tarih Seçimi)" ? na : f_get_settled_idx(false, lb_mode_idx, lb_input, last_f_v_1, cur_v_sz_1, settled_v_idx, eff_h, eff_l, eff_c, hb_4990, lb_4990, hb_auto, lb_auto)
+    settled_p_idx := lb_mode == "Manuel (Tarih Seçimi)" ? na : f_get_settled_idx(true, lb_mode_idx, lb_input, last_f_p_1, cur_p_sz_1, settled_p_idx, eff_h_anc, eff_l_anc, eff_c_anc, hb_4990, lb_4990, hb_auto, lb_auto)
+    settled_v_idx := lb_mode == "Manuel (Tarih Seçimi)" ? na : f_get_settled_idx(false, lb_mode_idx, lb_input, last_f_v_1, cur_v_sz_1, settled_v_idx, eff_h_anc, eff_l_anc, eff_c_anc, hb_4990, lb_4990, hb_auto, lb_auto)
 
 if lb_mode == "Manuel (Tarih Seçimi)"
     settled_p_idx := ta.valuewhen(time <= p_time, bar_index, 0)
@@ -337,24 +359,26 @@ var FiltState fs_p2_ex = FiltState.new(), fs_v2_ex = FiltState.new()
 
 is_p_anc = (bar_index == settled_p_idx) or (ta.change(settled_p_idx) != 0)
 is_v_anc = (bar_index == settled_v_idx) or (ta.change(settled_v_idx) != 0)
-float init_p_val = eff_h[math.max(0, bar_index - nz(settled_p_idx, bar_index))]
-float init_v_val = eff_l[math.max(0, bar_index - nz(settled_v_idx, bar_index))]
+float init_p_val_m1 = eff_h_m1[math.max(0, bar_index - nz(settled_p_idx, bar_index))]
+float init_v_val_m1 = eff_l_m1[math.max(0, bar_index - nz(settled_v_idx, bar_index))]
+float init_p_val_m2 = eff_h_m2[math.max(0, bar_index - nz(settled_p_idx, bar_index))]
+float init_v_val_m2 = eff_l_m2[math.max(0, bar_index - nz(settled_v_idx, bar_index))]
 
-last_f_p_1 := fs_p1.upd_filt(eff_h, eff_l, cur_p_sz_1, init_p_val, is_p_anc)
-last_f_v_1 := fs_v1.upd_filt(eff_h, eff_l, cur_v_sz_1, init_v_val, is_v_anc)
+last_f_p_1 := fs_p1.upd_filt(eff_h_m1, eff_l_m1, cur_p_sz_1, init_p_val_m1, is_p_anc)
+last_f_v_1 := fs_v1.upd_filt(eff_h_m1, eff_l_m1, cur_v_sz_1, init_v_val_m1, is_v_anc)
 
 float cur_p_sz_ex_1 = not na(cur_sz_unit_ex_1) and not na(p_gamma_ex_1) ? cur_sz_unit_ex_1 * p_gamma_ex_1 : na
 float cur_v_sz_ex_1 = not na(cur_sz_unit_ex_1) and not na(v_gamma_ex_1) ? cur_sz_unit_ex_1 * v_gamma_ex_1 : na
-float last_f_p1_ex = not na(cur_p_sz_ex_1) ? fs_p1_ex.upd_filt(eff_h, eff_l, cur_p_sz_ex_1, init_p_val, is_p_anc) : na
-float last_f_v1_ex = not na(cur_v_sz_ex_1) ? fs_v1_ex.upd_filt(eff_h, eff_l, cur_v_sz_ex_1, init_v_val, is_v_anc) : na
+float last_f_p1_ex = not na(cur_p_sz_ex_1) ? fs_p1_ex.upd_filt(eff_h_m1, eff_l_m1, cur_p_sz_ex_1, init_p_val_m1, is_p_anc) : na
+float last_f_v1_ex = not na(cur_v_sz_ex_1) ? fs_v1_ex.upd_filt(eff_h_m1, eff_l_m1, cur_v_sz_ex_1, init_v_val_m1, is_v_anc) : na
 
-float last_f_p_2 = fs_p2.upd_filt(eff_h, eff_l, cur_p_sz_2, init_p_val, is_p_anc)
-float last_f_v_2 = fs_v2.upd_filt(eff_h, eff_l, cur_v_sz_2, init_v_val, is_v_anc)
+float last_f_p_2 = fs_p2.upd_filt(eff_h_m2, eff_l_m2, cur_p_sz_2, init_p_val_m2, is_p_anc)
+float last_f_v_2 = fs_v2.upd_filt(eff_h_m2, eff_l_m2, cur_v_sz_2, init_v_val_m2, is_v_anc)
 
 float cur_p_sz_ex_2 = not na(cur_sz_unit_ex_2) and not na(p_gamma_ex_2) ? cur_sz_unit_ex_2 * p_gamma_ex_2 : na
 float cur_v_sz_ex_2 = not na(cur_sz_unit_ex_2) and not na(v_gamma_ex_2) ? cur_sz_unit_ex_2 * v_gamma_ex_2 : na
-float last_f_p2_ex = not na(cur_p_sz_ex_2) ? fs_p2_ex.upd_filt(eff_h, eff_l, cur_p_sz_ex_2, init_p_val, is_p_anc) : na
-float last_f_v2_ex = not na(cur_v_sz_ex_2) ? fs_v2_ex.upd_filt(eff_h, eff_l, cur_v_sz_ex_2, init_v_val, is_v_anc) : na
+float last_f_p2_ex = not na(cur_p_sz_ex_2) ? fs_p2_ex.upd_filt(eff_h_m2, eff_l_m2, cur_p_sz_ex_2, init_p_val_m2, is_p_anc) : na
+float last_f_v2_ex = not na(cur_v_sz_ex_2) ? fs_v2_ex.upd_filt(eff_h_m2, eff_l_m2, cur_v_sz_ex_2, init_v_val_m2, is_v_anc) : na
 
 // Visualization
 var polyline[] p_pl = array.new<polyline>(0)
@@ -377,10 +401,10 @@ if barstate.islast
         chart.point[] pts = array.new<chart.point>(0)
         float cf = na, float pf = na
         int s_idx = math.max(bar_index - 4990, p_idx_u)
-        float st = eff_h[bar_index-s_idx]
+        float st = eff_h_m1[bar_index-s_idx]
         for j = s_idx to bar_index
             off = bar_index - j
-            cf := f_r.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_1[off] * p_gamma_val, st, j == s_idx)
+            cf := f_r.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_1[off] * p_gamma_val, st, j == s_idx)
             if not na(pf) and math.abs(pf - cf) > (syminfo.mintick / 10)
                 array.push(pts, chart.point.from_index(j, pf))
             array.push(pts, chart.point.from_index(j, cf))
@@ -394,7 +418,7 @@ if barstate.islast
             float cfe = na, float pfe = na
             for j = s_idx to bar_index
                 off = bar_index - j
-                cfe := f_re.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex_1[off] * p_gamma_ex_1, st, j == s_idx)
+                cfe := f_re.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex_1[off] * p_gamma_ex_1, st, j == s_idx)
                 if not na(pfe) and math.abs(pfe - cfe) > (syminfo.mintick / 10)
                     array.push(ptse, chart.point.from_index(j, pfe))
                 array.push(ptse, chart.point.from_index(j, cfe))
@@ -408,7 +432,7 @@ if barstate.islast
             float cfe2 = na, float pfe2 = na
             for j = s_idx to bar_index
                 off = bar_index - j
-                cfe2 := f_re2.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex2_1[off] * p_gamma_ex2_1, st, j == s_idx)
+                cfe2 := f_re2.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex2_1[off] * p_gamma_ex2_1, st, j == s_idx)
                 if not na(pfe2) and math.abs(pfe2 - cfe2) > (syminfo.mintick / 10)
                     array.push(ptse2, chart.point.from_index(j, pfe2))
                 array.push(ptse2, chart.point.from_index(j, cfe2))
@@ -422,7 +446,7 @@ if barstate.islast
             float cfe3 = na, float pfe3 = na
             for j = s_idx to bar_index
                 off = bar_index - j
-                cfe3 := f_re3.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex3_1[off] * p_gamma_ex3_1, st, j == s_idx)
+                cfe3 := f_re3.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex3_1[off] * p_gamma_ex3_1, st, j == s_idx)
                 if not na(pfe3) and math.abs(pfe3 - cfe3) > (syminfo.mintick / 10)
                     array.push(ptse3, chart.point.from_index(j, pfe3))
                 array.push(ptse3, chart.point.from_index(j, cfe3))
@@ -436,7 +460,7 @@ if barstate.islast
             float cfe4 = na, float pfe4 = na
             for j = s_idx to bar_index
                 off = bar_index - j
-                cfe4 := f_re4.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex4_1[off] * p_gamma_ex4_1, st, j == s_idx)
+                cfe4 := f_re4.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex4_1[off] * p_gamma_ex4_1, st, j == s_idx)
                 if not na(pfe4) and math.abs(pfe4 - cfe4) > (syminfo.mintick / 10)
                     array.push(ptse4, chart.point.from_index(j, pfe4))
                 array.push(ptse4, chart.point.from_index(j, cfe4))
@@ -450,7 +474,7 @@ if barstate.islast
             float cfe5 = na, float pfe5 = na
             for j = s_idx to bar_index
                 off = bar_index - j
-                cfe5 := f_re5.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex5_1[off] * p_gamma_ex5_1, st, j == s_idx)
+                cfe5 := f_re5.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex5_1[off] * p_gamma_ex5_1, st, j == s_idx)
                 if not na(pfe5) and math.abs(pfe5 - cfe5) > (syminfo.mintick / 10)
                     array.push(ptse5, chart.point.from_index(j, pfe5))
                 array.push(ptse5, chart.point.from_index(j, cfe5))
@@ -464,10 +488,10 @@ if barstate.islast
         chart.point[] pts = array.new<chart.point>(0)
         float cf = na, float pf = na
         int s_idx = math.max(bar_index - 4990, v_idx_u)
-        float st = eff_l[bar_index-s_idx]
+        float st = eff_l_m1[bar_index-s_idx]
         for j = s_idx to bar_index
             off = bar_index - j
-            cf := f_r.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_1[off] * v_gamma_val, st, j == s_idx)
+            cf := f_r.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_1[off] * v_gamma_val, st, j == s_idx)
             if not na(pf) and math.abs(pf - cf) > (syminfo.mintick / 10)
                 array.push(pts, chart.point.from_index(j, pf))
             array.push(pts, chart.point.from_index(j, cf))
@@ -481,7 +505,7 @@ if barstate.islast
             float cfe = na, float pfe = na
             for j = s_idx to bar_index
                 off = bar_index - j
-                cfe := f_re.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex_1[off] * v_gamma_ex_1, st, j == s_idx)
+                cfe := f_re.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex_1[off] * v_gamma_ex_1, st, j == s_idx)
                 if not na(pfe) and math.abs(pfe - cfe) > (syminfo.mintick / 10)
                     array.push(ptse, chart.point.from_index(j, pfe))
                 array.push(ptse, chart.point.from_index(j, cfe))
@@ -495,7 +519,7 @@ if barstate.islast
             float cfe2 = na, float pfe2 = na
             for j = s_idx to bar_index
                 off = bar_index - j
-                cfe2 := f_re2.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex2_v1[off] * v_gamma_ex2_1, st, j == s_idx)
+                cfe2 := f_re2.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex2_v1[off] * v_gamma_ex2_1, st, j == s_idx)
                 if not na(pfe2) and math.abs(pfe2 - cfe2) > (syminfo.mintick / 10)
                     array.push(ptse2, chart.point.from_index(j, pfe2))
                 array.push(ptse2, chart.point.from_index(j, cfe2))
@@ -509,7 +533,7 @@ if barstate.islast
             float cfe3 = na, float pfe3 = na
             for j = s_idx to bar_index
                 off = bar_index - j
-                cfe3 := f_re3.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex3_1[off] * v_gamma_ex3_1, st, j == s_idx)
+                cfe3 := f_re3.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex3_1[off] * v_gamma_ex3_1, st, j == s_idx)
                 if not na(pfe3) and math.abs(pfe3 - cfe3) > (syminfo.mintick / 10)
                     array.push(ptse3, chart.point.from_index(j, pfe3))
                 array.push(ptse3, chart.point.from_index(j, cfe3))
@@ -523,7 +547,7 @@ if barstate.islast
             float cfe4 = na, float pfe4 = na
             for j = s_idx to bar_index
                 off = bar_index - j
-                cfe4 := f_re4.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex4_1[off] * v_gamma_ex4_1, st, j == s_idx)
+                cfe4 := f_re4.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex4_1[off] * v_gamma_ex4_1, st, j == s_idx)
                 if not na(pfe4) and math.abs(pfe4 - cfe4) > (syminfo.mintick / 10)
                     array.push(ptse4, chart.point.from_index(j, pfe4))
                 array.push(ptse4, chart.point.from_index(j, cfe4))
@@ -537,7 +561,7 @@ if barstate.islast
             float cfe5 = na, float pfe5 = na
             for j = s_idx to bar_index
                 off = bar_index - j
-                cfe5 := f_re5.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex5_1[off] * v_gamma_ex5_1, st, j == s_idx)
+                cfe5 := f_re5.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex5_1[off] * v_gamma_ex5_1, st, j == s_idx)
                 if not na(pfe5) and math.abs(pfe5 - cfe5) > (syminfo.mintick / 10)
                     array.push(ptse5, chart.point.from_index(j, pfe5))
                 array.push(ptse5, chart.point.from_index(j, cfe5))
@@ -552,10 +576,10 @@ if barstate.islast
         chart.point[] pts = array.new<chart.point>(0)
         float cf = na, float pf = na
         int s_idx = math.max(bar_index - 4990, p_idx_u)
-        float st = eff_h[bar_index-s_idx]
+        float st = eff_h_m2[bar_index-s_idx]
         for j = s_idx to bar_index
             off = bar_index - j
-            cf := f_r.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_2[off] * p_gamma_val_2, st, j == s_idx)
+            cf := f_r.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_2[off] * p_gamma_val_2, st, j == s_idx)
             if not na(pf) and math.abs(pf - cf) > (syminfo.mintick / 10)
                 array.push(pts, chart.point.from_index(j, pf))
             array.push(pts, chart.point.from_index(j, cf))
@@ -569,7 +593,7 @@ if barstate.islast
             float cfe = na, float pfe = na
             for j = s_idx to bar_index
                 off = bar_index - j
-                cfe := f_re.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex_2[off] * p_gamma_ex_2, st, j == s_idx)
+                cfe := f_re.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_ex_2[off] * p_gamma_ex_2, st, j == s_idx)
                 if not na(pfe) and math.abs(pfe - cfe) > (syminfo.mintick / 10)
                     array.push(ptse, chart.point.from_index(j, pfe))
                 array.push(ptse, chart.point.from_index(j, cfe))
@@ -583,7 +607,7 @@ if barstate.islast
             float cfe2 = na, float pfe2 = na
             for j = s_idx to bar_index
                 off = bar_index - j
-                cfe2 := f_re2.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex2_2[off] * p_gamma_ex2_2, st, j == s_idx)
+                cfe2 := f_re2.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_ex2_2[off] * p_gamma_ex2_2, st, j == s_idx)
                 if not na(pfe2) and math.abs(pfe2 - cfe2) > (syminfo.mintick / 10)
                     array.push(ptse2, chart.point.from_index(j, pfe2))
                 array.push(ptse2, chart.point.from_index(j, cfe2))
@@ -597,7 +621,7 @@ if barstate.islast
             float cfe3 = na, float pfe3 = na
             for j = s_idx to bar_index
                 off = bar_index - j
-                cfe3 := f_re3.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex3_2[off] * p_gamma_ex3_2, st, j == s_idx)
+                cfe3 := f_re3.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_ex3_2[off] * p_gamma_ex3_2, st, j == s_idx)
                 if not na(pfe3) and math.abs(pfe3 - cfe3) > (syminfo.mintick / 10)
                     array.push(ptse3, chart.point.from_index(j, pfe3))
                 array.push(ptse3, chart.point.from_index(j, cfe3))
@@ -611,7 +635,7 @@ if barstate.islast
             float cfe4 = na, float pfe4 = na
             for j = s_idx to bar_index
                 off = bar_index - j
-                cfe4 := f_re4.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex4_2[off] * p_gamma_ex4_2, st, j == s_idx)
+                cfe4 := f_re4.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_ex4_2[off] * p_gamma_ex4_2, st, j == s_idx)
                 if not na(pfe4) and math.abs(pfe4 - cfe4) > (syminfo.mintick / 10)
                     array.push(ptse4, chart.point.from_index(j, pfe4))
                 array.push(ptse4, chart.point.from_index(j, cfe4))
@@ -625,7 +649,7 @@ if barstate.islast
             float cfe5 = na, float pfe5 = na
             for j = s_idx to bar_index
                 off = bar_index - j
-                cfe5 := f_re5.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex5_2[off] * p_gamma_ex5_2, st, j == s_idx)
+                cfe5 := f_re5.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_ex5_2[off] * p_gamma_ex5_2, st, j == s_idx)
                 if not na(pfe5) and math.abs(pfe5 - cfe5) > (syminfo.mintick / 10)
                     array.push(ptse5, chart.point.from_index(j, pfe5))
                 array.push(ptse5, chart.point.from_index(j, cfe5))
@@ -639,10 +663,10 @@ if barstate.islast
         chart.point[] pts = array.new<chart.point>(0)
         float cf = na, float pf = na
         int s_idx = math.max(bar_index - 4990, v_idx_u)
-        float st = eff_l[bar_index-s_idx]
+        float st = eff_l_m2[bar_index-s_idx]
         for j = s_idx to bar_index
             off = bar_index - j
-            cf := f_r.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_2[off] * v_gamma_val_2, st, j == s_idx)
+            cf := f_r.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_2[off] * v_gamma_val_2, st, j == s_idx)
             if not na(pf) and math.abs(pf - cf) > (syminfo.mintick / 10)
                 array.push(pts, chart.point.from_index(j, pf))
             array.push(pts, chart.point.from_index(j, cf))
@@ -656,7 +680,7 @@ if barstate.islast
             float cfe = na, float pfe = na
             for j = s_idx to bar_index
                 off = bar_index - j
-                cfe := f_re.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex_2[off] * v_gamma_ex_2, st, j == s_idx)
+                cfe := f_re.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_ex_2[off] * v_gamma_ex_2, st, j == s_idx)
                 if not na(pfe) and math.abs(pfe - cfe) > (syminfo.mintick / 10)
                     array.push(ptse, chart.point.from_index(j, pfe))
                 array.push(ptse, chart.point.from_index(j, cfe))
@@ -670,7 +694,7 @@ if barstate.islast
             float cfe2 = na, float pfe2 = na
             for j = s_idx to bar_index
                 off = bar_index - j
-                cfe2 := f_re2.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex2_2[off] * v_gamma_ex2_2, st, j == s_idx)
+                cfe2 := f_re2.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_ex2_2[off] * v_gamma_ex2_2, st, j == s_idx)
                 if not na(pfe2) and math.abs(pfe2 - cfe2) > (syminfo.mintick / 10)
                     array.push(ptse2, chart.point.from_index(j, pfe2))
                 array.push(ptse2, chart.point.from_index(j, cfe2))
@@ -684,7 +708,7 @@ if barstate.islast
             float cfe3 = na, float pfe3 = na
             for j = s_idx to bar_index
                 off = bar_index - j
-                cfe3 := f_re3.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex3_2[off] * v_gamma_ex3_2, st, j == s_idx)
+                cfe3 := f_re3.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_ex3_2[off] * v_gamma_ex3_2, st, j == s_idx)
                 if not na(pfe3) and math.abs(pfe3 - cfe3) > (syminfo.mintick / 10)
                     array.push(ptse3, chart.point.from_index(j, pfe3))
                 array.push(ptse3, chart.point.from_index(j, cfe3))
@@ -698,7 +722,7 @@ if barstate.islast
             float cfe4 = na, float pfe4 = na
             for j = s_idx to bar_index
                 off = bar_index - j
-                cfe4 := f_re4.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex4_2[off] * v_gamma_ex4_2, st, j == s_idx)
+                cfe4 := f_re4.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_ex4_2[off] * v_gamma_ex4_2, st, j == s_idx)
                 if not na(pfe4) and math.abs(pfe4 - cfe4) > (syminfo.mintick / 10)
                     array.push(ptse4, chart.point.from_index(j, pfe4))
                 array.push(ptse4, chart.point.from_index(j, cfe4))
@@ -712,7 +736,7 @@ if barstate.islast
             float cfe5 = na, float pfe5 = na
             for j = s_idx to bar_index
                 off = bar_index - j
-                cfe5 := f_re5.upd_filt(eff_h[off], eff_l[off], cur_sz_unit_ex5_2[off] * v_gamma_ex5_2, st, j == s_idx)
+                cfe5 := f_re5.upd_filt(eff_h_m2[off], eff_l_m2[off], cur_sz_unit_ex5_2[off] * v_gamma_ex5_2, st, j == s_idx)
                 if not na(pfe5) and math.abs(pfe5 - cfe5) > (syminfo.mintick / 10)
                     array.push(ptse5, chart.point.from_index(j, pfe5))
                 array.push(ptse5, chart.point.from_index(j, cfe5))
