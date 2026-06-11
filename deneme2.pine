@@ -394,6 +394,18 @@ if barstate.islast
     int p_idx_u = settled_p_idx
     int v_idx_u = settled_v_idx
 
+    // --- COLORS ---
+    m1_transp = use_ha_m1 ? 60 : 0
+    m2_transp = use_ha_m2 ? 60 : 0
+
+    m1_c_y = color.new(color.yellow, m1_transp)
+    m1_c_r = color.new(color.red, m1_transp)
+    m1_c_g = color.new(color.green, m1_transp)
+
+    m2_c_y = color.new(color.yellow, m2_transp)
+    m2_c_r = color.new(color.red, m2_transp)
+    m2_c_g = color.new(color.green, m2_transp)
+
     // --- DRAW ENGINE 1 ---
     if show_m1 and show_peak and not na(p_idx_u)
         // Main
@@ -410,7 +422,7 @@ if barstate.islast
             array.push(pts, chart.point.from_index(j, cf))
             pf := cf
         if array.size(pts) > 1
-            array.push(p_pl, polyline.new(pts, line_color=color.yellow, line_width=filt_width))
+            array.push(p_pl, polyline.new(pts, line_color=m1_c_y, line_width=filt_width))
         // Extra
         if not na(p_gamma_ex_1) and not na(cur_sz_unit_ex_1)
             FiltState f_re = FiltState.new()
@@ -424,7 +436,7 @@ if barstate.islast
                 array.push(ptse, chart.point.from_index(j, cfe))
                 pfe := cfe
             if array.size(ptse) > 1
-                array.push(p_pl, polyline.new(ptse, line_color=color.red, line_width=filt_width))
+                array.push(p_pl, polyline.new(ptse, line_color=m1_c_r, line_width=filt_width))
         // 2nd Extra (Motor 1 Only)
         if not na(p_gamma_ex2_1) and not na(cur_sz_unit_ex2_1)
             FiltState f_re2 = FiltState.new()
@@ -438,7 +450,7 @@ if barstate.islast
                 array.push(ptse2, chart.point.from_index(j, cfe2))
                 pfe2 := cfe2
             if array.size(ptse2) > 1
-                array.push(p_pl, polyline.new(ptse2, line_color=color.red, line_width=filt_width))
+                array.push(p_pl, polyline.new(ptse2, line_color=m1_c_r, line_width=filt_width))
         // 3rd Extra (Motor 1 Only)
         if not na(p_gamma_ex3_1) and not na(cur_sz_unit_ex3_1)
             FiltState f_re3 = FiltState.new()
@@ -452,7 +464,7 @@ if barstate.islast
                 array.push(ptse3, chart.point.from_index(j, cfe3))
                 pfe3 := cfe3
             if array.size(ptse3) > 1
-                array.push(p_pl, polyline.new(ptse3, line_color=color.red, line_width=filt_width))
+                array.push(p_pl, polyline.new(ptse3, line_color=m1_c_r, line_width=filt_width))
         // 4th Extra (Motor 1 Only)
         if not na(p_gamma_ex4_1) and not na(cur_sz_unit_ex4_1)
             FiltState f_re4 = FiltState.new()
@@ -466,7 +478,7 @@ if barstate.islast
                 array.push(ptse4, chart.point.from_index(j, cfe4))
                 pfe4 := cfe4
             if array.size(ptse4) > 1
-                array.push(p_pl, polyline.new(ptse4, line_color=color.red, line_width=filt_width))
+                array.push(p_pl, polyline.new(ptse4, line_color=m1_c_r, line_width=filt_width))
         // 5th Extra (Motor 1 Only)
         if not na(p_gamma_ex5_1) and not na(cur_sz_unit_ex5_1)
             FiltState f_re5 = FiltState.new()
@@ -480,7 +492,7 @@ if barstate.islast
                 array.push(ptse5, chart.point.from_index(j, cfe5))
                 pfe5 := cfe5
             if array.size(ptse5) > 1
-                array.push(p_pl, polyline.new(ptse5, line_color=color.red, line_width=filt_width))
+                array.push(p_pl, polyline.new(ptse5, line_color=m1_c_r, line_width=filt_width))
 
     if show_m1 and show_valley and not na(v_idx_u)
         // Main
@@ -497,7 +509,7 @@ if barstate.islast
             array.push(pts, chart.point.from_index(j, cf))
             pf := cf
         if array.size(pts) > 1
-            array.push(v_pl, polyline.new(pts, line_color=color.yellow, line_width=filt_width))
+            array.push(v_pl, polyline.new(pts, line_color=m1_c_y, line_width=filt_width))
         // Extra
         if not na(v_gamma_ex_1) and not na(cur_sz_unit_ex_1)
             FiltState f_re = FiltState.new()
@@ -511,7 +523,7 @@ if barstate.islast
                 array.push(ptse, chart.point.from_index(j, cfe))
                 pfe := cfe
             if array.size(ptse) > 1
-                array.push(v_pl, polyline.new(ptse, line_color=color.green, line_width=filt_width))
+                array.push(v_pl, polyline.new(ptse, line_color=m1_c_g, line_width=filt_width))
         // 2nd Extra (Motor 1 Only)
         if not na(v_gamma_ex2_1) and not na(cur_sz_unit_ex2_v1)
             FiltState f_re2 = FiltState.new()
@@ -525,7 +537,7 @@ if barstate.islast
                 array.push(ptse2, chart.point.from_index(j, cfe2))
                 pfe2 := cfe2
             if array.size(ptse2) > 1
-                array.push(v_pl, polyline.new(ptse2, line_color=color.green, line_width=filt_width))
+                array.push(v_pl, polyline.new(ptse2, line_color=m1_c_g, line_width=filt_width))
         // 3rd Extra (Motor 1 Only)
         if not na(v_gamma_ex3_1) and not na(cur_sz_unit_ex3_1)
             FiltState f_re3 = FiltState.new()
@@ -539,7 +551,7 @@ if barstate.islast
                 array.push(ptse3, chart.point.from_index(j, cfe3))
                 pfe3 := cfe3
             if array.size(ptse3) > 1
-                array.push(v_pl, polyline.new(ptse3, line_color=color.green, line_width=filt_width))
+                array.push(v_pl, polyline.new(ptse3, line_color=m1_c_g, line_width=filt_width))
         // 4th Extra (Motor 1 Only)
         if not na(v_gamma_ex4_1) and not na(cur_sz_unit_ex4_1)
             FiltState f_re4 = FiltState.new()
@@ -553,7 +565,7 @@ if barstate.islast
                 array.push(ptse4, chart.point.from_index(j, cfe4))
                 pfe4 := cfe4
             if array.size(ptse4) > 1
-                array.push(v_pl, polyline.new(ptse4, line_color=color.green, line_width=filt_width))
+                array.push(v_pl, polyline.new(ptse4, line_color=m1_c_g, line_width=filt_width))
         // 5th Extra (Motor 1 Only)
         if not na(v_gamma_ex5_1) and not na(cur_sz_unit_ex5_1)
             FiltState f_re5 = FiltState.new()
@@ -567,7 +579,7 @@ if barstate.islast
                 array.push(ptse5, chart.point.from_index(j, cfe5))
                 pfe5 := cfe5
             if array.size(ptse5) > 1
-                array.push(v_pl, polyline.new(ptse5, line_color=color.green, line_width=filt_width))
+                array.push(v_pl, polyline.new(ptse5, line_color=m1_c_g, line_width=filt_width))
 
     // --- DRAW ENGINE 2 ---
     if show_m2 and show_peak and not na(p_idx_u)
@@ -585,7 +597,7 @@ if barstate.islast
             array.push(pts, chart.point.from_index(j, cf))
             pf := cf
         if array.size(pts) > 1
-            array.push(p_pl, polyline.new(pts, line_color=color.yellow, line_width=filt_width))
+            array.push(p_pl, polyline.new(pts, line_color=m2_c_y, line_width=filt_width))
         // Extra
         if not na(p_gamma_ex_2) and not na(cur_sz_unit_ex_2)
             FiltState f_re = FiltState.new()
@@ -599,7 +611,7 @@ if barstate.islast
                 array.push(ptse, chart.point.from_index(j, cfe))
                 pfe := cfe
             if array.size(ptse) > 1
-                array.push(p_pl, polyline.new(ptse, line_color=color.red, line_width=filt_width))
+                array.push(p_pl, polyline.new(ptse, line_color=m2_c_r, line_width=filt_width))
         // 2nd Extra (Motor 2)
         if not na(p_gamma_ex2_2) and not na(cur_sz_unit_ex2_2)
             FiltState f_re2 = FiltState.new()
@@ -613,7 +625,7 @@ if barstate.islast
                 array.push(ptse2, chart.point.from_index(j, cfe2))
                 pfe2 := cfe2
             if array.size(ptse2) > 1
-                array.push(p_pl, polyline.new(ptse2, line_color=color.red, line_width=filt_width))
+                array.push(p_pl, polyline.new(ptse2, line_color=m2_c_r, line_width=filt_width))
         // 3rd Extra (Motor 2)
         if not na(p_gamma_ex3_2) and not na(cur_sz_unit_ex3_2)
             FiltState f_re3 = FiltState.new()
@@ -627,7 +639,7 @@ if barstate.islast
                 array.push(ptse3, chart.point.from_index(j, cfe3))
                 pfe3 := cfe3
             if array.size(ptse3) > 1
-                array.push(p_pl, polyline.new(ptse3, line_color=color.red, line_width=filt_width))
+                array.push(p_pl, polyline.new(ptse3, line_color=m2_c_r, line_width=filt_width))
         // 4th Extra (Motor 2)
         if not na(p_gamma_ex4_2) and not na(cur_sz_unit_ex4_2)
             FiltState f_re4 = FiltState.new()
@@ -641,7 +653,7 @@ if barstate.islast
                 array.push(ptse4, chart.point.from_index(j, cfe4))
                 pfe4 := cfe4
             if array.size(ptse4) > 1
-                array.push(p_pl, polyline.new(ptse4, line_color=color.red, line_width=filt_width))
+                array.push(p_pl, polyline.new(ptse4, line_color=m2_c_r, line_width=filt_width))
         // 5th Extra (Motor 2)
         if not na(p_gamma_ex5_2) and not na(cur_sz_unit_ex5_2)
             FiltState f_re5 = FiltState.new()
@@ -655,7 +667,7 @@ if barstate.islast
                 array.push(ptse5, chart.point.from_index(j, cfe5))
                 pfe5 := cfe5
             if array.size(ptse5) > 1
-                array.push(p_pl, polyline.new(ptse5, line_color=color.red, line_width=filt_width))
+                array.push(p_pl, polyline.new(ptse5, line_color=m2_c_r, line_width=filt_width))
 
     if show_m2 and show_valley and not na(v_idx_u)
         // Main
@@ -672,7 +684,7 @@ if barstate.islast
             array.push(pts, chart.point.from_index(j, cf))
             pf := cf
         if array.size(pts) > 1
-            array.push(v_pl, polyline.new(pts, line_color=color.yellow, line_width=filt_width))
+            array.push(v_pl, polyline.new(pts, line_color=m2_c_y, line_width=filt_width))
         // Extra
         if not na(v_gamma_ex_2) and not na(cur_sz_unit_ex_2)
             FiltState f_re = FiltState.new()
@@ -686,7 +698,7 @@ if barstate.islast
                 array.push(ptse, chart.point.from_index(j, cfe))
                 pfe := cfe
             if array.size(ptse) > 1
-                array.push(v_pl, polyline.new(ptse, line_color=color.green, line_width=filt_width))
+                array.push(v_pl, polyline.new(ptse, line_color=m2_c_g, line_width=filt_width))
         // 2nd Extra (Motor 2)
         if not na(v_gamma_ex2_2) and not na(cur_sz_unit_ex2_2)
             FiltState f_re2 = FiltState.new()
@@ -700,7 +712,7 @@ if barstate.islast
                 array.push(ptse2, chart.point.from_index(j, cfe2))
                 pfe2 := cfe2
             if array.size(ptse2) > 1
-                array.push(v_pl, polyline.new(ptse2, line_color=color.green, line_width=filt_width))
+                array.push(v_pl, polyline.new(ptse2, line_color=m2_c_g, line_width=filt_width))
         // 3rd Extra (Motor 2)
         if not na(v_gamma_ex3_2) and not na(cur_sz_unit_ex3_2)
             FiltState f_re3 = FiltState.new()
@@ -714,7 +726,7 @@ if barstate.islast
                 array.push(ptse3, chart.point.from_index(j, cfe3))
                 pfe3 := cfe3
             if array.size(ptse3) > 1
-                array.push(v_pl, polyline.new(ptse3, line_color=color.green, line_width=filt_width))
+                array.push(v_pl, polyline.new(ptse3, line_color=m2_c_g, line_width=filt_width))
         // 4th Extra (Motor 2)
         if not na(v_gamma_ex4_2) and not na(cur_sz_unit_ex4_2)
             FiltState f_re4 = FiltState.new()
@@ -728,7 +740,7 @@ if barstate.islast
                 array.push(ptse4, chart.point.from_index(j, cfe4))
                 pfe4 := cfe4
             if array.size(ptse4) > 1
-                array.push(v_pl, polyline.new(ptse4, line_color=color.green, line_width=filt_width))
+                array.push(v_pl, polyline.new(ptse4, line_color=m2_c_g, line_width=filt_width))
         // 5th Extra (Motor 2)
         if not na(v_gamma_ex5_2) and not na(cur_sz_unit_ex5_2)
             FiltState f_re5 = FiltState.new()
@@ -742,7 +754,7 @@ if barstate.islast
                 array.push(ptse5, chart.point.from_index(j, cfe5))
                 pfe5 := cfe5
             if array.size(ptse5) > 1
-                array.push(v_pl, polyline.new(ptse5, line_color=color.green, line_width=filt_width))
+                array.push(v_pl, polyline.new(ptse5, line_color=m2_c_g, line_width=filt_width))
 
 // Table
 if show_table and barstate.islast
