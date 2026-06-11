@@ -1,5 +1,5 @@
 //@version=6
-indicator("Volcanic Auto Peaks & Valleys v6", overlay=true, max_bars_back=3000, max_lines_count=500, max_labels_count=500, max_polylines_count=100)
+indicator("Volcanic Auto Peaks & Valleys v6", overlay=true, max_lines_count=500, max_labels_count=500, max_polylines_count=100)
 
 // --- GRUPLAR / GROUPS ---
 string GRP_AUTO = "⚓ Otomatik Çapa Ayarları / Auto Anchor Settings"
@@ -110,8 +110,8 @@ f_get_settled_idx(bool is_peak, int lb_mode_idx, int lb_val, float prev_f, float
     res_idx
 
 // --- CROSSOVER CORE LOGIC ---
-f_get_cr_data(float m_val, float ex1, float ex2, float ex3, float ex4, float ex5, float ex6, float ex7, float ex8, float ex9, float ex10) =>
-    float res_idx = 0.0 // 1 to 10
+f_get_cr_data(float m_val, float ex1, float ex2, float ex3, float ex4, float ex5, float ex6, float ex7, float ex8, float ex9, float ex10, float ex11, float ex12, float ex13) =>
+    float res_idx = 0.0 // 1 to 13
     float res_dir = 0.0 // 1: Up, -1: Down
 
     // Check for crossovers. main filter (m_val) crosses others.
@@ -126,8 +126,23 @@ f_get_cr_data(float m_val, float ex1, float ex2, float ex3, float ex4, float ex5
     bool div8 = nz(m_val[1]) != nz(ex8[1])
     bool div9 = nz(m_val[1]) != nz(ex9[1])
     bool div10 = nz(m_val[1]) != nz(ex10[1])
+    bool div11 = nz(m_val[1]) != nz(ex11[1])
+    bool div12 = nz(m_val[1]) != nz(ex12[1])
+    bool div13 = nz(m_val[1]) != nz(ex13[1])
 
-    if ta.crossunder(m_val, ex10) and div10
+    if ta.crossunder(m_val, ex13) and div13
+        res_idx := 13.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex13) and div13
+        res_idx := 13.0, res_dir := 1.0
+    else if ta.crossunder(m_val, ex12) and div12
+        res_idx := 12.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex12) and div12
+        res_idx := 12.0, res_dir := 1.0
+    else if ta.crossunder(m_val, ex11) and div11
+        res_idx := 11.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex11) and div11
+        res_idx := 11.0, res_dir := 1.0
+    else if ta.crossunder(m_val, ex10) and div10
         res_idx := 10.0, res_dir := -1.0
     else if ta.crossover(m_val, ex10) and div10
         res_idx := 10.0, res_dir := 1.0
@@ -192,6 +207,9 @@ f_m1_crossover_scanner() =>
     t_unit_ex8 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 100000000.0 : atr_mult)))
     t_unit_ex9 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 1000000000.0 : atr_mult)))
     t_unit_ex10 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 10000000000.0 : atr_mult)))
+    t_unit_ex11 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 100000000000.0 : atr_mult)))
+    t_unit_ex12 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 1000000000000.0 : atr_mult)))
+    t_unit_ex13 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 10000000000000.0 : atr_mult)))
 
     // 4. Gamma Params
     pg = p_gamma_val, vg = v_gamma_val
@@ -205,6 +223,9 @@ f_m1_crossover_scanner() =>
     pg_ex8 = extra_layer_conn == "Gamma" ? pg + 12.566370614359172 : pg
     pg_ex9 = extra_layer_conn == "Gamma" ? pg + 14.137166941154069 : pg
     pg_ex10 = extra_layer_conn == "Gamma" ? pg + 15.707963267948966 : pg
+    pg_ex11 = extra_layer_conn == "Gamma" ? pg + 17.27875959474386 : pg
+    pg_ex12 = extra_layer_conn == "Gamma" ? pg + 18.84955592153876 : pg
+    pg_ex13 = extra_layer_conn == "Gamma" ? pg + 20.420352248333657 : pg
 
     vg_ex1 = extra_layer_conn == "Gamma" ? vg + 1.5707963267948966 : vg
     vg_ex2 = extra_layer_conn == "Gamma" ? vg + 3.1415926535897932 : vg
@@ -216,6 +237,9 @@ f_m1_crossover_scanner() =>
     vg_ex8 = extra_layer_conn == "Gamma" ? vg + 12.566370614359172 : vg
     vg_ex9 = extra_layer_conn == "Gamma" ? vg + 14.137166941154069 : vg
     vg_ex10 = extra_layer_conn == "Gamma" ? vg + 15.707963267948966 : vg
+    vg_ex11 = extra_layer_conn == "Gamma" ? vg + 17.27875959474386 : vg
+    vg_ex12 = extra_layer_conn == "Gamma" ? vg + 18.84955592153876 : vg
+    vg_ex13 = extra_layer_conn == "Gamma" ? vg + 20.420352248333657 : vg
 
     // 5. Anchor Calculation (Standard Prices)
     int lb_val = lb_mode == "Global (Maksimum)" ? 4990 : lb_mode == "Otomatik (Hassasiyet)" ? lb_sens * 144 : auto_lookback
@@ -249,6 +273,9 @@ f_m1_crossover_scanner() =>
     var FiltState fs_p8 = FiltState.new(), var FiltState fs_v8 = FiltState.new()
     var FiltState fs_p9 = FiltState.new(), var FiltState fs_v9 = FiltState.new()
     var FiltState fs_p10 = FiltState.new(), var FiltState fs_v10 = FiltState.new()
+    var FiltState fs_p11 = FiltState.new(), var FiltState fs_v11 = FiltState.new()
+    var FiltState fs_p12 = FiltState.new(), var FiltState fs_v12 = FiltState.new()
+    var FiltState fs_p13 = FiltState.new(), var FiltState fs_v13 = FiltState.new()
 
     is_p_anc = (bar_index == s_p_idx) or (ta.change(s_p_idx) != 0)
     is_v_anc = (bar_index == s_v_idx) or (ta.change(s_v_idx) != 0)
@@ -279,10 +306,16 @@ f_m1_crossover_scanner() =>
     f_v9 = fs_v9.upd_filt(t_h, t_l, t_unit_ex9 * vg_ex9, i_v, is_v_anc)
     f_p10 = fs_p10.upd_filt(t_h, t_l, t_unit_ex10 * pg_ex10, i_p, is_p_anc)
     f_v10 = fs_v10.upd_filt(t_h, t_l, t_unit_ex10 * vg_ex10, i_v, is_v_anc)
+    f_p11 = fs_p11.upd_filt(t_h, t_l, t_unit_ex11 * pg_ex11, i_p, is_p_anc)
+    f_v11 = fs_v11.upd_filt(t_h, t_l, t_unit_ex11 * vg_ex11, i_v, is_v_anc)
+    f_p12 = fs_p12.upd_filt(t_h, t_l, t_unit_ex12 * pg_ex12, i_p, is_p_anc)
+    f_v12 = fs_v12.upd_filt(t_h, t_l, t_unit_ex12 * vg_ex12, i_v, is_v_anc)
+    f_p13 = fs_p13.upd_filt(t_h, t_l, t_unit_ex13 * pg_ex13, i_p, is_p_anc)
+    f_v13 = fs_v13.upd_filt(t_h, t_l, t_unit_ex13 * vg_ex13, i_v, is_v_anc)
 
     // 7. Detection
-    [p_cr_idx, p_cr_dir] = f_get_cr_data(l_f_p, f_p1, f_p2, f_p3, f_p4, f_p5, f_p6, f_p7, f_p8, f_p9, f_p10)
-    [v_cr_idx, v_cr_dir] = f_get_cr_data(l_f_v, f_v1, f_v2, f_v3, f_v4, f_v5, f_v6, f_v7, f_v8, f_v9, f_v10)
+    [p_cr_idx, p_cr_dir] = f_get_cr_data(l_f_p, f_p1, f_p2, f_p3, f_p4, f_p5, f_p6, f_p7, f_p8, f_p9, f_p10, f_p11, f_p12, f_p13)
+    [v_cr_idx, v_cr_dir] = f_get_cr_data(l_f_v, f_v1, f_v2, f_v3, f_v4, f_v5, f_v6, f_v7, f_v8, f_v9, f_v10, f_v11, f_v12, f_v13)
 
     // Find how many bars ago the last crossover happened
     // We'll return the index, direction and some identifier
@@ -483,6 +516,30 @@ float atr_per_ex10_1 = not na(atr_mult_ex10_1) ? math.min(4990.0, (timeframe.in_
 float cur_sz_unit_ex10_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex10_1, 8.1))
 float cur_sz_unit_ex10_1 = is_in_range and not na(atr_per_ex10_1) ? cur_sz_unit_ex10_1_raw : na
 
+// Motor 1: 11th Extra Peak Parameters
+float atr_mult_ex11_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 100000000000.0 : atr_mult
+if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex11_1 > 3141.5926535897932 + 1.0)
+    atr_mult_ex11_1 := na
+float atr_per_ex11_1 = not na(atr_mult_ex11_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex11_1) : na
+float cur_sz_unit_ex11_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex11_1, 8.1))
+float cur_sz_unit_ex11_1 = is_in_range and not na(atr_per_ex11_1) ? cur_sz_unit_ex11_1_raw : na
+
+// Motor 1: 12th Extra Peak Parameters
+float atr_mult_ex12_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 1000000000000.0 : atr_mult
+if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex12_1 > 3141.5926535897932 + 1.0)
+    atr_mult_ex12_1 := na
+float atr_per_ex12_1 = not na(atr_mult_ex12_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex12_1) : na
+float cur_sz_unit_ex12_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex12_1, 8.1))
+float cur_sz_unit_ex12_1 = is_in_range and not na(atr_per_ex12_1) ? cur_sz_unit_ex12_1_raw : na
+
+// Motor 1: 13th Extra Peak Parameters
+float atr_mult_ex13_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 10000000000000.0 : atr_mult
+if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex13_1 > 3141.5926535897932 + 1.0)
+    atr_mult_ex13_1 := na
+float atr_per_ex13_1 = not na(atr_mult_ex13_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex13_1) : na
+float cur_sz_unit_ex13_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex13_1, 8.1))
+float cur_sz_unit_ex13_1 = is_in_range and not na(atr_per_ex13_1) ? cur_sz_unit_ex13_1_raw : na
+
 float p_gamma_ex_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 1.5707963267948966 : p_gamma_val
 if extra_layer_conn == "Gamma" and (p_gamma_ex_1 > 141.3716694115407 + 0.1)
     p_gamma_ex_1 := na
@@ -513,6 +570,15 @@ if extra_layer_conn == "Gamma" and (p_gamma_ex9_1 > 141.3716694115407 + 0.1)
 float p_gamma_ex10_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 15.707963267948966 : p_gamma_val
 if extra_layer_conn == "Gamma" and (p_gamma_ex10_1 > 141.3716694115407 + 0.1)
     p_gamma_ex10_1 := na
+float p_gamma_ex11_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 17.27875959474386 : p_gamma_val
+if extra_layer_conn == "Gamma" and (p_gamma_ex11_1 > 141.3716694115407 + 0.1)
+    p_gamma_ex11_1 := na
+float p_gamma_ex12_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 18.84955592153876 : p_gamma_val
+if extra_layer_conn == "Gamma" and (p_gamma_ex12_1 > 141.3716694115407 + 0.1)
+    p_gamma_ex12_1 := na
+float p_gamma_ex13_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 20.420352248333657 : p_gamma_val
+if extra_layer_conn == "Gamma" and (p_gamma_ex13_1 > 141.3716694115407 + 0.1)
+    p_gamma_ex13_1 := na
 float v_gamma_ex_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 1.5707963267948966 : v_gamma_val
 if extra_layer_conn == "Gamma" and (v_gamma_ex_1 > 141.3716694115407 + 0.1)
     v_gamma_ex_1 := na
@@ -543,6 +609,15 @@ if extra_layer_conn == "Gamma" and (v_gamma_ex9_1 > 141.3716694115407 + 0.1)
 float v_gamma_ex10_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 15.707963267948966 : v_gamma_val
 if extra_layer_conn == "Gamma" and (v_gamma_ex10_1 > 141.3716694115407 + 0.1)
     v_gamma_ex10_1 := na
+float v_gamma_ex11_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 17.27875959474386 : v_gamma_val
+if extra_layer_conn == "Gamma" and (v_gamma_ex11_1 > 141.3716694115407 + 0.1)
+    v_gamma_ex11_1 := na
+float v_gamma_ex12_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 18.84955592153876 : v_gamma_val
+if extra_layer_conn == "Gamma" and (v_gamma_ex12_1 > 141.3716694115407 + 0.1)
+    v_gamma_ex12_1 := na
+float v_gamma_ex13_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 20.420352248333657 : v_gamma_val
+if extra_layer_conn == "Gamma" and (v_gamma_ex13_1 > 141.3716694115407 + 0.1)
+    v_gamma_ex13_1 := na
 
 // Engine 2 Parameters
 float atr_per_2 = math.min(4990.0, auto_atr ? (timeframe.in_seconds() / 60.0) * atr_mult_2 : atr_opt)
@@ -621,39 +696,39 @@ float v_gamma_ex5_2 = extra_layer_conn_2 == "Gamma" ? v_gamma_val_2 + 7.85398163
 if extra_layer_conn_2 == "Gamma" and (v_gamma_ex5_2 > 141.3716694115407 + 0.1)
     v_gamma_ex5_2 := na
 
-max_bars_back(cur_sz_unit_1, 3000)
-max_bars_back(cur_sz_unit_ex_1, 3000)
-max_bars_back(cur_sz_unit_ex2_1, 3000)
+// Only set max_bars_back for variables that are indexed in loops
+max_bars_back(eff_h_m1, 5000)
+max_bars_back(eff_l_m1, 5000)
+max_bars_back(eff_h_m2, 5000)
+max_bars_back(eff_l_m2, 5000)
+max_bars_back(eff_h_anc, 5000)
+max_bars_back(eff_l_anc, 5000)
+
+// Also set for size units as they are accessed by index in the drawing loops
+max_bars_back(cur_sz_unit_1, 5000)
+max_bars_back(cur_sz_unit_ex_1, 5000)
+max_bars_back(cur_sz_unit_ex2_1, 5000)
+max_bars_back(cur_sz_unit_ex2_v1, 5000)
+max_bars_back(cur_sz_unit_ex3_1, 5000)
+max_bars_back(cur_sz_unit_ex4_1, 5000)
+max_bars_back(cur_sz_unit_ex5_1, 5000)
+max_bars_back(cur_sz_unit_ex6_1, 5000)
+max_bars_back(cur_sz_unit_ex7_1, 5000)
+max_bars_back(cur_sz_unit_ex8_1, 5000)
+max_bars_back(cur_sz_unit_ex9_1, 5000)
+max_bars_back(cur_sz_unit_ex10_1, 5000)
+max_bars_back(cur_sz_unit_ex11_1, 5000)
+max_bars_back(cur_sz_unit_ex12_1, 5000)
+max_bars_back(cur_sz_unit_ex13_1, 5000)
+max_bars_back(cur_sz_unit_2, 5000)
+max_bars_back(cur_sz_unit_ex_2, 5000)
+max_bars_back(cur_sz_unit_ex2_2, 5000)
+max_bars_back(cur_sz_unit_ex3_2, 5000)
+max_bars_back(cur_sz_unit_ex4_2, 5000)
+max_bars_back(cur_sz_unit_ex5_2, 5000)
+
 float cur_sz_unit_ex2_v1_raw = f_kama_atr(tr_m1, nz(atr_per_ex2_1, 8.1))
 float cur_sz_unit_ex2_v1 = is_in_range and not na(atr_per_ex2_1) ? cur_sz_unit_ex2_v1_raw : na
-max_bars_back(cur_sz_unit_ex2_v1, 3000)
-max_bars_back(cur_sz_unit_ex3_1, 3000)
-max_bars_back(cur_sz_unit_ex4_1, 3000)
-max_bars_back(cur_sz_unit_ex5_1, 3000)
-max_bars_back(cur_sz_unit_ex6_1, 3000)
-max_bars_back(cur_sz_unit_ex7_1, 3000)
-max_bars_back(cur_sz_unit_ex8_1, 3000)
-max_bars_back(cur_sz_unit_ex9_1, 3000)
-max_bars_back(cur_sz_unit_ex10_1, 3000)
-max_bars_back(cur_sz_unit_2, 3000)
-max_bars_back(cur_sz_unit_ex_2, 3000)
-max_bars_back(cur_sz_unit_ex2_2, 3000)
-max_bars_back(cur_sz_unit_ex3_2, 3000)
-max_bars_back(cur_sz_unit_ex4_2, 3000)
-max_bars_back(cur_sz_unit_ex5_2, 3000)
-max_bars_back(high, 3000)
-max_bars_back(low, 3000)
-max_bars_back(close, 3000)
-max_bars_back(time, 3000)
-max_bars_back(eff_h_anc, 3000)
-max_bars_back(eff_l_anc, 3000)
-max_bars_back(eff_c_anc, 3000)
-max_bars_back(eff_h_m1, 3000)
-max_bars_back(eff_l_m1, 3000)
-max_bars_back(eff_c_m1, 3000)
-max_bars_back(eff_h_m2, 3000)
-max_bars_back(eff_l_m2, 3000)
-max_bars_back(eff_c_m2, 3000)
 
 // 3. Anchor & Lookback State (Shared)
 int lb_input = lb_input_val
@@ -778,6 +853,9 @@ if barstate.islast
         f_draw_m1_peak_ex(p_gamma_ex8_1, cur_sz_unit_ex8_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels, p_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
         f_draw_m1_peak_ex(p_gamma_ex9_1, cur_sz_unit_ex9_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels, p_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
         f_draw_m1_peak_ex(p_gamma_ex10_1, cur_sz_unit_ex10_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels, p_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_peak_ex(p_gamma_ex11_1, cur_sz_unit_ex11_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels, p_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_peak_ex(p_gamma_ex12_1, cur_sz_unit_ex12_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels, p_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_peak_ex(p_gamma_ex13_1, cur_sz_unit_ex13_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels, p_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
 
     if show_m1 and show_valley and not na(v_idx_u)
         int s_idx = math.max(bar_index - 4990, v_idx_u)
@@ -810,6 +888,9 @@ if barstate.islast
         f_draw_m1_valley_ex(v_gamma_ex8_1, cur_sz_unit_ex8_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels, v_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
         f_draw_m1_valley_ex(v_gamma_ex9_1, cur_sz_unit_ex9_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels, v_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
         f_draw_m1_valley_ex(v_gamma_ex10_1, cur_sz_unit_ex10_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels, v_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_valley_ex(v_gamma_ex11_1, cur_sz_unit_ex11_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels, v_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_valley_ex(v_gamma_ex12_1, cur_sz_unit_ex12_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels, v_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
+        f_draw_m1_valley_ex(v_gamma_ex13_1, cur_sz_unit_ex13_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels, v_pl, eff_h_m1, eff_l_m1, filt_width, enable_cr, show_cr_arrows)
 
     // --- DRAW ENGINE 2 ---
     if show_m2 and show_peak and not na(p_idx_u)
@@ -1074,13 +1155,13 @@ var label lp = na, var label lv = na
 if barstate.islast
     int p_idx_label = settled_p_idx, int v_idx_label = settled_v_idx
     if not na(p_idx_label)
-        int h_off = math.max(0, math.min(2999, bar_index - p_idx_label))
+        int h_off = math.max(0, math.min(4999, bar_index - p_idx_label))
         if na(lp)
             lp := label.new(p_idx_label, eff_h_anc[h_off], "⚓ Tepe", color=color.red, textcolor=color.white, style=label.style_label_down)
         else
             label.set_xy(lp, p_idx_label, eff_h_anc[h_off])
     if not na(v_idx_label)
-        int v_off = math.max(0, math.min(2999, bar_index - v_idx_label))
+        int v_off = math.max(0, math.min(4999, bar_index - v_idx_label))
         if na(lv)
             lv := label.new(v_idx_label, eff_l_anc[v_off], "⚓ Dip", color=color.green, textcolor=color.white, style=label.style_label_up)
         else
