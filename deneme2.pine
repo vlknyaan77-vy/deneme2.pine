@@ -110,8 +110,8 @@ f_get_settled_idx(bool is_peak, int lb_mode_idx, int lb_val, float prev_f, float
     res_idx
 
 // --- CROSSOVER CORE LOGIC ---
-f_get_cr_data(float m_val, float ex1, float ex2, float ex3, float ex4, float ex5, float ex6, float ex7) =>
-    float res_idx = 0.0 // 1 to 7
+f_get_cr_data(float m_val, float ex1, float ex2, float ex3, float ex4, float ex5, float ex6, float ex7, float ex8, float ex9, float ex10) =>
+    float res_idx = 0.0 // 1 to 10
     float res_dir = 0.0 // 1: Up, -1: Down
 
     // Check for crossovers. main filter (m_val) crosses others.
@@ -123,8 +123,23 @@ f_get_cr_data(float m_val, float ex1, float ex2, float ex3, float ex4, float ex5
     bool div5 = nz(m_val[1]) != nz(ex5[1])
     bool div6 = nz(m_val[1]) != nz(ex6[1])
     bool div7 = nz(m_val[1]) != nz(ex7[1])
+    bool div8 = nz(m_val[1]) != nz(ex8[1])
+    bool div9 = nz(m_val[1]) != nz(ex9[1])
+    bool div10 = nz(m_val[1]) != nz(ex10[1])
 
-    if ta.crossunder(m_val, ex7) and div7
+    if ta.crossunder(m_val, ex10) and div10
+        res_idx := 10.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex10) and div10
+        res_idx := 10.0, res_dir := 1.0
+    else if ta.crossunder(m_val, ex9) and div9
+        res_idx := 9.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex9) and div9
+        res_idx := 9.0, res_dir := 1.0
+    else if ta.crossunder(m_val, ex8) and div8
+        res_idx := 8.0, res_dir := -1.0
+    else if ta.crossover(m_val, ex8) and div8
+        res_idx := 8.0, res_dir := 1.0
+    else if ta.crossunder(m_val, ex7) and div7
         res_idx := 7.0, res_dir := -1.0
     else if ta.crossover(m_val, ex7) and div7
         res_idx := 7.0, res_dir := 1.0
@@ -174,6 +189,9 @@ f_m1_crossover_scanner() =>
     t_unit_ex5 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 100000.0 : atr_mult)))
     t_unit_ex6 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 1000000.0 : atr_mult)))
     t_unit_ex7 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 10000000.0 : atr_mult)))
+    t_unit_ex8 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 100000000.0 : atr_mult)))
+    t_unit_ex9 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 1000000000.0 : atr_mult)))
+    t_unit_ex10 = f_kama_atr(t_tr, math.min(4990.0, (timeframe.in_seconds() / 60.0) * (extra_layer_conn == "ATR Çarpanı" ? atr_mult * 10000000000.0 : atr_mult)))
 
     // 4. Gamma Params
     pg = p_gamma_val, vg = v_gamma_val
@@ -184,6 +202,9 @@ f_m1_crossover_scanner() =>
     pg_ex5 = extra_layer_conn == "Gamma" ? pg + 7.853981633974483 : pg
     pg_ex6 = extra_layer_conn == "Gamma" ? pg + 9.42477796076938 : pg
     pg_ex7 = extra_layer_conn == "Gamma" ? pg + 10.995574287564276 : pg
+    pg_ex8 = extra_layer_conn == "Gamma" ? pg + 12.566370614359172 : pg
+    pg_ex9 = extra_layer_conn == "Gamma" ? pg + 14.137166941154069 : pg
+    pg_ex10 = extra_layer_conn == "Gamma" ? pg + 15.707963267948966 : pg
 
     vg_ex1 = extra_layer_conn == "Gamma" ? vg + 1.5707963267948966 : vg
     vg_ex2 = extra_layer_conn == "Gamma" ? vg + 3.1415926535897932 : vg
@@ -192,6 +213,9 @@ f_m1_crossover_scanner() =>
     vg_ex5 = extra_layer_conn == "Gamma" ? vg + 7.853981633974483 : vg
     vg_ex6 = extra_layer_conn == "Gamma" ? vg + 9.42477796076938 : vg
     vg_ex7 = extra_layer_conn == "Gamma" ? vg + 10.995574287564276 : vg
+    vg_ex8 = extra_layer_conn == "Gamma" ? vg + 12.566370614359172 : vg
+    vg_ex9 = extra_layer_conn == "Gamma" ? vg + 14.137166941154069 : vg
+    vg_ex10 = extra_layer_conn == "Gamma" ? vg + 15.707963267948966 : vg
 
     // 5. Anchor Calculation (Standard Prices)
     int lb_val = lb_mode == "Global (Maksimum)" ? 4990 : lb_mode == "Otomatik (Hassasiyet)" ? lb_sens * 144 : auto_lookback
@@ -222,6 +246,9 @@ f_m1_crossover_scanner() =>
     var FiltState fs_p5 = FiltState.new(), var FiltState fs_v5 = FiltState.new()
     var FiltState fs_p6 = FiltState.new(), var FiltState fs_v6 = FiltState.new()
     var FiltState fs_p7 = FiltState.new(), var FiltState fs_v7 = FiltState.new()
+    var FiltState fs_p8 = FiltState.new(), var FiltState fs_v8 = FiltState.new()
+    var FiltState fs_p9 = FiltState.new(), var FiltState fs_v9 = FiltState.new()
+    var FiltState fs_p10 = FiltState.new(), var FiltState fs_v10 = FiltState.new()
 
     is_p_anc = (bar_index == s_p_idx) or (ta.change(s_p_idx) != 0)
     is_v_anc = (bar_index == s_v_idx) or (ta.change(s_v_idx) != 0)
@@ -246,10 +273,16 @@ f_m1_crossover_scanner() =>
     f_v6 = fs_v6.upd_filt(t_h, t_l, t_unit_ex6 * vg_ex6, i_v, is_v_anc)
     f_p7 = fs_p7.upd_filt(t_h, t_l, t_unit_ex7 * pg_ex7, i_p, is_p_anc)
     f_v7 = fs_v7.upd_filt(t_h, t_l, t_unit_ex7 * vg_ex7, i_v, is_v_anc)
+    f_p8 = fs_p8.upd_filt(t_h, t_l, t_unit_ex8 * pg_ex8, i_p, is_p_anc)
+    f_v8 = fs_v8.upd_filt(t_h, t_l, t_unit_ex8 * vg_ex8, i_v, is_v_anc)
+    f_p9 = fs_p9.upd_filt(t_h, t_l, t_unit_ex9 * pg_ex9, i_p, is_p_anc)
+    f_v9 = fs_v9.upd_filt(t_h, t_l, t_unit_ex9 * vg_ex9, i_v, is_v_anc)
+    f_p10 = fs_p10.upd_filt(t_h, t_l, t_unit_ex10 * pg_ex10, i_p, is_p_anc)
+    f_v10 = fs_v10.upd_filt(t_h, t_l, t_unit_ex10 * vg_ex10, i_v, is_v_anc)
 
     // 7. Detection
-    [p_cr_idx, p_cr_dir] = f_get_cr_data(l_f_p, f_p1, f_p2, f_p3, f_p4, f_p5, f_p6, f_p7)
-    [v_cr_idx, v_cr_dir] = f_get_cr_data(l_f_v, f_v1, f_v2, f_v3, f_v4, f_v5, f_v6, f_v7)
+    [p_cr_idx, p_cr_dir] = f_get_cr_data(l_f_p, f_p1, f_p2, f_p3, f_p4, f_p5, f_p6, f_p7, f_p8, f_p9, f_p10)
+    [v_cr_idx, v_cr_dir] = f_get_cr_data(l_f_v, f_v1, f_v2, f_v3, f_v4, f_v5, f_v6, f_v7, f_v8, f_v9, f_v10)
 
     // Find how many bars ago the last crossover happened
     // We'll return the index, direction and some identifier
@@ -374,6 +407,30 @@ float atr_per_ex7_1 = not na(atr_mult_ex7_1) ? math.min(4990.0, (timeframe.in_se
 float cur_sz_unit_ex7_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex7_1, 8.1))
 float cur_sz_unit_ex7_1 = is_in_range and not na(atr_per_ex7_1) ? cur_sz_unit_ex7_1_raw : na
 
+// Motor 1: 8th Extra Peak Parameters
+float atr_mult_ex8_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 100000000.0 : atr_mult
+if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex8_1 > 3141.5926535897932 + 1.0)
+    atr_mult_ex8_1 := na
+float atr_per_ex8_1 = not na(atr_mult_ex8_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex8_1) : na
+float cur_sz_unit_ex8_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex8_1, 8.1))
+float cur_sz_unit_ex8_1 = is_in_range and not na(atr_per_ex8_1) ? cur_sz_unit_ex8_1_raw : na
+
+// Motor 1: 9th Extra Peak Parameters
+float atr_mult_ex9_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 1000000000.0 : atr_mult
+if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex9_1 > 3141.5926535897932 + 1.0)
+    atr_mult_ex9_1 := na
+float atr_per_ex9_1 = not na(atr_mult_ex9_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex9_1) : na
+float cur_sz_unit_ex9_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex9_1, 8.1))
+float cur_sz_unit_ex9_1 = is_in_range and not na(atr_per_ex9_1) ? cur_sz_unit_ex9_1_raw : na
+
+// Motor 1: 10th Extra Peak Parameters
+float atr_mult_ex10_1 = extra_layer_conn == "ATR Çarpanı" ? atr_mult * 10000000000.0 : atr_mult
+if extra_layer_conn == "ATR Çarpanı" and (atr_mult_ex10_1 > 3141.5926535897932 + 1.0)
+    atr_mult_ex10_1 := na
+float atr_per_ex10_1 = not na(atr_mult_ex10_1) ? math.min(4990.0, (timeframe.in_seconds() / 60.0) * atr_mult_ex10_1) : na
+float cur_sz_unit_ex10_1_raw = f_kama_atr(tr_m1, nz(atr_per_ex10_1, 8.1))
+float cur_sz_unit_ex10_1 = is_in_range and not na(atr_per_ex10_1) ? cur_sz_unit_ex10_1_raw : na
+
 float p_gamma_ex_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 1.5707963267948966 : p_gamma_val
 if extra_layer_conn == "Gamma" and (p_gamma_ex_1 > 141.3716694115407 + 0.1)
     p_gamma_ex_1 := na
@@ -395,6 +452,15 @@ if extra_layer_conn == "Gamma" and (p_gamma_ex6_1 > 141.3716694115407 + 0.1)
 float p_gamma_ex7_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 10.995574287564276 : p_gamma_val
 if extra_layer_conn == "Gamma" and (p_gamma_ex7_1 > 141.3716694115407 + 0.1)
     p_gamma_ex7_1 := na
+float p_gamma_ex8_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 12.566370614359172 : p_gamma_val
+if extra_layer_conn == "Gamma" and (p_gamma_ex8_1 > 141.3716694115407 + 0.1)
+    p_gamma_ex8_1 := na
+float p_gamma_ex9_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 14.137166941154069 : p_gamma_val
+if extra_layer_conn == "Gamma" and (p_gamma_ex9_1 > 141.3716694115407 + 0.1)
+    p_gamma_ex9_1 := na
+float p_gamma_ex10_1 = extra_layer_conn == "Gamma" ? p_gamma_val + 15.707963267948966 : p_gamma_val
+if extra_layer_conn == "Gamma" and (p_gamma_ex10_1 > 141.3716694115407 + 0.1)
+    p_gamma_ex10_1 := na
 float v_gamma_ex_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 1.5707963267948966 : v_gamma_val
 if extra_layer_conn == "Gamma" and (v_gamma_ex_1 > 141.3716694115407 + 0.1)
     v_gamma_ex_1 := na
@@ -416,6 +482,15 @@ if extra_layer_conn == "Gamma" and (v_gamma_ex6_1 > 141.3716694115407 + 0.1)
 float v_gamma_ex7_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 10.995574287564276 : v_gamma_val
 if extra_layer_conn == "Gamma" and (v_gamma_ex7_1 > 141.3716694115407 + 0.1)
     v_gamma_ex7_1 := na
+float v_gamma_ex8_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 12.566370614359172 : v_gamma_val
+if extra_layer_conn == "Gamma" and (v_gamma_ex8_1 > 141.3716694115407 + 0.1)
+    v_gamma_ex8_1 := na
+float v_gamma_ex9_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 14.137166941154069 : v_gamma_val
+if extra_layer_conn == "Gamma" and (v_gamma_ex9_1 > 141.3716694115407 + 0.1)
+    v_gamma_ex9_1 := na
+float v_gamma_ex10_1 = extra_layer_conn == "Gamma" ? v_gamma_val + 15.707963267948966 : v_gamma_val
+if extra_layer_conn == "Gamma" and (v_gamma_ex10_1 > 141.3716694115407 + 0.1)
+    v_gamma_ex10_1 := na
 
 // Engine 2 Parameters
 float atr_per_2 = math.min(4990.0, auto_atr ? (timeframe.in_seconds() / 60.0) * atr_mult_2 : atr_opt)
@@ -505,6 +580,9 @@ max_bars_back(cur_sz_unit_ex4_1, 5000)
 max_bars_back(cur_sz_unit_ex5_1, 5000)
 max_bars_back(cur_sz_unit_ex6_1, 5000)
 max_bars_back(cur_sz_unit_ex7_1, 5000)
+max_bars_back(cur_sz_unit_ex8_1, 5000)
+max_bars_back(cur_sz_unit_ex9_1, 5000)
+max_bars_back(cur_sz_unit_ex10_1, 5000)
 max_bars_back(cur_sz_unit_2, 5000)
 max_bars_back(cur_sz_unit_ex_2, 5000)
 max_bars_back(cur_sz_unit_ex2_2, 5000)
@@ -614,226 +692,124 @@ if barstate.islast
     m2_c_r = color.new(color.red, m2_transp)
     m2_c_g = color.new(color.green, m2_transp)
 
-    // --- DRAW ENGINE 1 PEAKS & CROSSOVERS ---
+    // --- DRAW ENGINE 1 PEAKS ---
     is_allowed_tf = (timeframe.period == "1") or (timeframe.period == "3") or (timeframe.period == "5")
+    float[] v0_arr = array.new_float(0)
 
     if show_m1 and show_peak and not na(p_idx_u)
         int s_idx = math.max(bar_index - 4990, p_idx_u)
         float st = eff_h_m1[bar_index-s_idx]
 
-        FiltState f0 = FiltState.new(), FiltState f1 = FiltState.new(), FiltState f2 = FiltState.new(), FiltState f3 = FiltState.new(), FiltState f4 = FiltState.new(), FiltState f5 = FiltState.new(), FiltState f6 = FiltState.new(), FiltState f7 = FiltState.new()
-        chart.point[] pts0 = array.new<chart.point>(0), chart.point[] pts1 = array.new<chart.point>(0), chart.point[] pts2 = array.new<chart.point>(0), chart.point[] pts3 = array.new<chart.point>(0), chart.point[] pts4 = array.new<chart.point>(0), chart.point[] pts5 = array.new<chart.point>(0), chart.point[] pts6 = array.new<chart.point>(0), chart.point[] pts7 = array.new<chart.point>(0)
-        float v0 = na, float pv0 = na, float v1 = na, float pv1 = na, float v2 = na, float pv2 = na, float v3 = na, float pv3 = na, float v4 = na, float pv4 = na, float v5 = na, float pv5 = na, float v6 = na, float pv6 = na, float v7 = na, float pv7 = na
-
+        // 1. Main Filter
+        FiltState f_r = FiltState.new()
+        chart.point[] pts = array.new<chart.point>(0)
+        float cf = na, float pf = na
         for j = s_idx to bar_index
             off = bar_index - j
-            bool is_start = (j == s_idx)
+            cf := f_r.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_1[off] * p_gamma_val, st, j == s_idx)
+            array.push(v0_arr, cf)
+            if not na(pf) and math.abs(pf - cf) > (syminfo.mintick / 10)
+                array.push(pts, chart.point.from_index(j, pf))
+            array.push(pts, chart.point.from_index(j, cf))
+            pf := cf
+        if array.size(pts) > 1
+            array.push(p_pl, polyline.new(pts, line_color=m1_c_y, line_width=filt_width))
 
-            v0 := f0.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_1[off] * p_gamma_val, st, is_start)
-            v1 := f1.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex_1[off] * p_gamma_ex_1, st, is_start)
-            v2 := f2.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex2_1[off] * p_gamma_ex2_1, st, is_start)
-            v3 := f3.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex3_1[off] * p_gamma_ex3_1, st, is_start)
-            v4 := f4.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex4_1[off] * p_gamma_ex4_1, st, is_start)
-            v5 := f5.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex5_1[off] * p_gamma_ex5_1, st, is_start)
-            v6 := f6.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex6_1[off] * p_gamma_ex6_1, st, is_start)
-            v7 := f7.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex7_1[off] * p_gamma_ex7_1, st, is_start)
+        // 2. Extra Layers
+        f_draw_m1_peak_ex(gamma_val, sz_unit, m_c, v0_data, start_idx, start_val, allowed_tf, l_cr_labels) =>
+            if not na(gamma_val) and not na(sz_unit)
+                FiltState f_re = FiltState.new()
+                chart.point[] ptse = array.new<chart.point>(0)
+                float cfe = na, float pfe = na
+                for j = start_idx to bar_index
+                    off = bar_index - j
+                    cfe := f_re.upd_filt(eff_h_m1[off], eff_l_m1[off], sz_unit[off] * gamma_val, start_val, j == start_idx)
+                    if not na(pfe) and math.abs(pfe - cfe) > (syminfo.mintick / 10)
+                        array.push(ptse, chart.point.from_index(j, pfe))
+                    array.push(ptse, chart.point.from_index(j, cfe))
 
-            if not na(pv0) and math.abs(pv0 - v0) > (syminfo.mintick / 10)
-                array.push(pts0, chart.point.from_index(j, pv0))
-            array.push(pts0, chart.point.from_index(j, v0))
+                    // Crossover check against v0_data
+                    if enable_cr and show_cr_arrows and allowed_tf and j > start_idx and array.size(l_cr_labels) < 1000
+                        int v_idx = j - start_idx
+                        float mv = array.get(v0_data, v_idx)
+                        float pmv = array.get(v0_data, v_idx - 1)
+                        if not na(mv) and not na(pmv) and not na(pfe) and pmv != pfe
+                            if pmv <= pfe and mv > cfe
+                                array.push(l_cr_labels, label.new(j, mv, text="↓", style=label.style_label_down, color=color.new(color.red, 20), textcolor=color.white, size=size.small))
+                            else if pmv >= pfe and mv < cfe
+                                array.push(l_cr_labels, label.new(j, mv, text="↑", style=label.style_label_up, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
+                    pfe := cfe
+                if array.size(ptse) > 1
+                    array.push(p_pl, polyline.new(ptse, line_color=m_c, line_width=filt_width))
 
-            if not na(p_gamma_ex_1) and not na(cur_sz_unit_ex_1)
-                if not na(pv1) and math.abs(pv1 - v1) > (syminfo.mintick / 10)
-                    array.push(pts1, chart.point.from_index(j, pv1))
-                array.push(pts1, chart.point.from_index(j, v1))
-            if not na(p_gamma_ex2_1) and not na(cur_sz_unit_ex2_1)
-                if not na(pv2) and math.abs(pv2 - v2) > (syminfo.mintick / 10)
-                    array.push(pts2, chart.point.from_index(j, pv2))
-                array.push(pts2, chart.point.from_index(j, v2))
-            if not na(p_gamma_ex3_1) and not na(cur_sz_unit_ex3_1)
-                if not na(pv3) and math.abs(pv3 - v3) > (syminfo.mintick / 10)
-                    array.push(pts3, chart.point.from_index(j, pv3))
-                array.push(pts3, chart.point.from_index(j, v3))
-            if not na(p_gamma_ex4_1) and not na(cur_sz_unit_ex4_1)
-                if not na(pv4) and math.abs(pv4 - v4) > (syminfo.mintick / 10)
-                    array.push(pts4, chart.point.from_index(j, pv4))
-                array.push(pts4, chart.point.from_index(j, v4))
-            if not na(p_gamma_ex5_1) and not na(cur_sz_unit_ex5_1)
-                if not na(pv5) and math.abs(pv5 - v5) > (syminfo.mintick / 10)
-                    array.push(pts5, chart.point.from_index(j, pv5))
-                array.push(pts5, chart.point.from_index(j, v5))
-            if not na(p_gamma_ex6_1) and not na(cur_sz_unit_ex6_1)
-                if not na(pv6) and math.abs(pv6 - v6) > (syminfo.mintick / 10)
-                    array.push(pts6, chart.point.from_index(j, pv6))
-                array.push(pts6, chart.point.from_index(j, v6))
-            if not na(p_gamma_ex7_1) and not na(cur_sz_unit_ex7_1)
-                if not na(pv7) and math.abs(pv7 - v7) > (syminfo.mintick / 10)
-                    array.push(pts7, chart.point.from_index(j, pv7))
-                array.push(pts7, chart.point.from_index(j, v7))
-
-            if enable_cr and show_cr_arrows and is_allowed_tf and not is_start and not na(pv0) and array.size(cr_labels) < 400
-                if not na(v1) and not na(pv1) and pv0 != pv1
-                    if pv0 <= pv1 and v0 > v1
-                        array.push(cr_labels, label.new(j, v0, text="↓", style=label.style_label_down, color=color.new(color.red, 20), textcolor=color.white, size=size.small))
-                    else if pv0 >= pv1 and v0 < v1
-                        array.push(cr_labels, label.new(j, v0, text="↑", style=label.style_label_up, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
-                if not na(v2) and not na(pv2) and pv0 != pv2
-                    if pv0 <= pv2 and v0 > v2
-                        array.push(cr_labels, label.new(j, v0, text="↓", style=label.style_label_down, color=color.new(color.red, 20), textcolor=color.white, size=size.small))
-                    else if pv0 >= pv2 and v0 < v2
-                        array.push(cr_labels, label.new(j, v0, text="↑", style=label.style_label_up, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
-                if not na(v3) and not na(pv3) and pv0 != pv3
-                    if pv0 <= pv3 and v0 > v3
-                        array.push(cr_labels, label.new(j, v0, text="↓", style=label.style_label_down, color=color.new(color.red, 20), textcolor=color.white, size=size.small))
-                    else if pv0 >= pv3 and v0 < v3
-                        array.push(cr_labels, label.new(j, v0, text="↑", style=label.style_label_up, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
-                if not na(v4) and not na(pv4) and pv0 != pv4
-                    if pv0 <= pv4 and v0 > v4
-                        array.push(cr_labels, label.new(j, v0, text="↓", style=label.style_label_down, color=color.new(color.red, 20), textcolor=color.white, size=size.small))
-                    else if pv0 >= pv4 and v0 < v4
-                        array.push(cr_labels, label.new(j, v0, text="↑", style=label.style_label_up, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
-                if not na(v5) and not na(pv5) and pv0 != pv5
-                    if pv0 <= pv5 and v0 > v5
-                        array.push(cr_labels, label.new(j, v0, text="↓", style=label.style_label_down, color=color.new(color.red, 20), textcolor=color.white, size=size.small))
-                    else if pv0 >= pv5 and v0 < v5
-                        array.push(cr_labels, label.new(j, v0, text="↑", style=label.style_label_up, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
-                if not na(v6) and not na(pv6) and pv0 != pv6
-                    if pv0 <= pv6 and v0 > v6
-                        array.push(cr_labels, label.new(j, v0, text="↓", style=label.style_label_down, color=color.new(color.red, 20), textcolor=color.white, size=size.small))
-                    else if pv0 >= pv6 and v0 < v6
-                        array.push(cr_labels, label.new(j, v0, text="↑", style=label.style_label_up, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
-                if not na(v7) and not na(pv7) and pv0 != pv7
-                    if pv0 <= pv7 and v0 > v7
-                        array.push(cr_labels, label.new(j, v0, text="↓", style=label.style_label_down, color=color.new(color.red, 20), textcolor=color.white, size=size.small))
-                    else if pv0 >= pv7 and v0 < v7
-                        array.push(cr_labels, label.new(j, v0, text="↑", style=label.style_label_up, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
-            pv0 := v0, pv1 := v1, pv2 := v2, pv3 := v3, pv4 := v4, pv5 := v5, pv6 := v6, pv7 := v7
-
-        if array.size(pts0) > 1
-            array.push(p_pl, polyline.new(pts0, line_color=m1_c_y, line_width=filt_width))
-        if array.size(pts1) > 1
-            array.push(p_pl, polyline.new(pts1, line_color=m1_c_r, line_width=filt_width))
-        if array.size(pts2) > 1
-            array.push(p_pl, polyline.new(pts2, line_color=m1_c_r, line_width=filt_width))
-        if array.size(pts3) > 1
-            array.push(p_pl, polyline.new(pts3, line_color=m1_c_r, line_width=filt_width))
-        if array.size(pts4) > 1
-            array.push(p_pl, polyline.new(pts4, line_color=m1_c_r, line_width=filt_width))
-        if array.size(pts5) > 1
-            array.push(p_pl, polyline.new(pts5, line_color=m1_c_r, line_width=filt_width))
-        if array.size(pts6) > 1
-            array.push(p_pl, polyline.new(pts6, line_color=m1_c_r, line_width=filt_width))
-        if array.size(pts7) > 1
-            array.push(p_pl, polyline.new(pts7, line_color=m1_c_r, line_width=filt_width))
+        f_draw_m1_peak_ex(p_gamma_ex_1, cur_sz_unit_ex_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels)
+        f_draw_m1_peak_ex(p_gamma_ex2_1, cur_sz_unit_ex2_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels)
+        f_draw_m1_peak_ex(p_gamma_ex3_1, cur_sz_unit_ex3_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels)
+        f_draw_m1_peak_ex(p_gamma_ex4_1, cur_sz_unit_ex4_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels)
+        f_draw_m1_peak_ex(p_gamma_ex5_1, cur_sz_unit_ex5_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels)
+        f_draw_m1_peak_ex(p_gamma_ex6_1, cur_sz_unit_ex6_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels)
+        f_draw_m1_peak_ex(p_gamma_ex7_1, cur_sz_unit_ex7_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels)
+        f_draw_m1_peak_ex(p_gamma_ex8_1, cur_sz_unit_ex8_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels)
+        f_draw_m1_peak_ex(p_gamma_ex9_1, cur_sz_unit_ex9_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels)
+        f_draw_m1_peak_ex(p_gamma_ex10_1, cur_sz_unit_ex10_1, m1_c_r, v0_arr, s_idx, st, is_allowed_tf, cr_labels)
 
     if show_m1 and show_valley and not na(v_idx_u)
         int s_idx = math.max(bar_index - 4990, v_idx_u)
         float st = eff_l_m1[bar_index-s_idx]
+        float[] v0_arr_v = array.new_float(0)
 
-        FiltState f0 = FiltState.new(), FiltState f1 = FiltState.new(), FiltState f2 = FiltState.new(), FiltState f3 = FiltState.new(), FiltState f4 = FiltState.new(), FiltState f5 = FiltState.new(), FiltState f6 = FiltState.new(), FiltState f7 = FiltState.new()
-        chart.point[] pts0 = array.new<chart.point>(0), chart.point[] pts1 = array.new<chart.point>(0), chart.point[] pts2 = array.new<chart.point>(0), chart.point[] pts3 = array.new<chart.point>(0), chart.point[] pts4 = array.new<chart.point>(0), chart.point[] pts5 = array.new<chart.point>(0), chart.point[] pts6 = array.new<chart.point>(0), chart.point[] pts7 = array.new<chart.point>(0)
-        float v0 = na, float pv0 = na, float v1 = na, float pv1 = na, float v2 = na, float pv2 = na, float v3 = na, float pv3 = na, float v4 = na, float pv4 = na, float v5 = na, float pv5 = na, float v6 = na, float pv6 = na, float v7 = na, float pv7 = na
-
+        // 1. Main Filter
+        FiltState f_r = FiltState.new()
+        chart.point[] pts = array.new<chart.point>(0)
+        float cf = na, float pf = na
         for j = s_idx to bar_index
             off = bar_index - j
-            bool is_start = (j == s_idx)
+            cf := f_r.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_1[off] * v_gamma_val, st, j == s_idx)
+            array.push(v0_arr_v, cf)
+            if not na(pf) and math.abs(pf - cf) > (syminfo.mintick / 10)
+                array.push(pts, chart.point.from_index(j, pf))
+            array.push(pts, chart.point.from_index(j, cf))
+            pf := cf
+        if array.size(pts) > 1
+            array.push(v_pl, polyline.new(pts, line_color=m1_c_y, line_width=filt_width))
 
-            v0 := f0.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_1[off] * v_gamma_val, st, is_start)
-            v1 := f1.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex_1[off] * v_gamma_ex_1, st, is_start)
-            v2 := f2.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex2_v1[off] * v_gamma_ex2_1, st, is_start)
-            v3 := f3.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex3_1[off] * v_gamma_ex3_1, st, is_start)
-            v4 := f4.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex4_1[off] * v_gamma_ex4_1, st, is_start)
-            v5 := f5.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex5_1[off] * v_gamma_ex5_1, st, is_start)
-            v6 := f6.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex6_1[off] * v_gamma_ex6_1, st, is_start)
-            v7 := f7.upd_filt(eff_h_m1[off], eff_l_m1[off], cur_sz_unit_ex7_1[off] * v_gamma_ex7_1, st, is_start)
+        // 2. Extra Layers
+        f_draw_m1_valley_ex(gamma_val, sz_unit, m_c, v0_data, start_idx, start_val, allowed_tf, l_cr_labels) =>
+            if not na(gamma_val) and not na(sz_unit)
+                FiltState f_re = FiltState.new()
+                chart.point[] ptse = array.new<chart.point>(0)
+                float cfe = na, float pfe = na
+                for j = start_idx to bar_index
+                    off = bar_index - j
+                    cfe := f_re.upd_filt(eff_h_m1[off], eff_l_m1[off], sz_unit[off] * gamma_val, start_val, j == start_idx)
+                    if not na(pfe) and math.abs(pfe - cfe) > (syminfo.mintick / 10)
+                        array.push(ptse, chart.point.from_index(j, pfe))
+                    array.push(ptse, chart.point.from_index(j, cfe))
 
-            if not na(pv0) and math.abs(pv0 - v0) > (syminfo.mintick / 10)
-                array.push(pts0, chart.point.from_index(j, pv0))
-            array.push(pts0, chart.point.from_index(j, v0))
+                    // Crossover check against v0_data
+                    if enable_cr and show_cr_arrows and allowed_tf and j > start_idx and array.size(l_cr_labels) < 2000
+                        int v_idx = j - start_idx
+                        float mv = array.get(v0_data, v_idx)
+                        float pmv = array.get(v0_data, v_idx - 1)
+                        if not na(mv) and not na(pmv) and not na(pfe) and pmv != pfe
+                            if pmv <= pfe and mv > cfe
+                                array.push(l_cr_labels, label.new(j, mv, text="↓", style=label.style_label_down, color=color.new(color.red, 20), textcolor=color.white, size=size.small))
+                            else if pmv >= pfe and mv < cfe
+                                array.push(l_cr_labels, label.new(j, mv, text="↑", style=label.style_label_up, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
+                    pfe := cfe
+                if array.size(ptse) > 1
+                    array.push(v_pl, polyline.new(ptse, line_color=m_c, line_width=filt_width))
 
-            if not na(v_gamma_ex_1) and not na(cur_sz_unit_ex_1)
-                if not na(pv1) and math.abs(pv1 - v1) > (syminfo.mintick / 10)
-                    array.push(pts1, chart.point.from_index(j, pv1))
-                array.push(pts1, chart.point.from_index(j, v1))
-            if not na(v_gamma_ex2_1) and not na(cur_sz_unit_ex2_v1)
-                if not na(pv2) and math.abs(pv2 - v2) > (syminfo.mintick / 10)
-                    array.push(pts2, chart.point.from_index(j, pv2))
-                array.push(pts2, chart.point.from_index(j, v2))
-            if not na(v_gamma_ex3_1) and not na(cur_sz_unit_ex3_1)
-                if not na(pv3) and math.abs(pv3 - v3) > (syminfo.mintick / 10)
-                    array.push(pts3, chart.point.from_index(j, pv3))
-                array.push(pts3, chart.point.from_index(j, v3))
-            if not na(v_gamma_ex4_1) and not na(cur_sz_unit_ex4_1)
-                if not na(pv4) and math.abs(pv4 - v4) > (syminfo.mintick / 10)
-                    array.push(pts4, chart.point.from_index(j, pv4))
-                array.push(pts4, chart.point.from_index(j, v4))
-            if not na(v_gamma_ex5_1) and not na(cur_sz_unit_ex5_1)
-                if not na(pv5) and math.abs(pv5 - v5) > (syminfo.mintick / 10)
-                    array.push(pts5, chart.point.from_index(j, pv5))
-                array.push(pts5, chart.point.from_index(j, v5))
-            if not na(v_gamma_ex6_1) and not na(cur_sz_unit_ex6_1)
-                if not na(pv6) and math.abs(pv6 - v6) > (syminfo.mintick / 10)
-                    array.push(pts6, chart.point.from_index(j, pv6))
-                array.push(pts6, chart.point.from_index(j, v6))
-            if not na(v_gamma_ex7_1) and not na(cur_sz_unit_ex7_1)
-                if not na(pv7) and math.abs(pv7 - v7) > (syminfo.mintick / 10)
-                    array.push(pts7, chart.point.from_index(j, pv7))
-                array.push(pts7, chart.point.from_index(j, v7))
-
-            if enable_cr and show_cr_arrows and is_allowed_tf and not is_start and not na(pv0) and array.size(cr_labels) < 800
-                if not na(v1) and not na(pv1) and pv0 != pv1
-                    if pv0 <= pv1 and v0 > v1
-                        array.push(cr_labels, label.new(j, v0, text="↓", style=label.style_label_down, color=color.new(color.red, 20), textcolor=color.white, size=size.small))
-                    else if pv0 >= pv1 and v0 < v1
-                        array.push(cr_labels, label.new(j, v0, text="↑", style=label.style_label_up, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
-                if not na(v2) and not na(pv2) and pv0 != pv2
-                    if pv0 <= pv2 and v0 > v2
-                        array.push(cr_labels, label.new(j, v0, text="↓", style=label.style_label_down, color=color.new(color.red, 20), textcolor=color.white, size=size.small))
-                    else if pv0 >= pv2 and v0 < v2
-                        array.push(cr_labels, label.new(j, v0, text="↑", style=label.style_label_up, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
-                if not na(v3) and not na(pv3) and pv0 != pv3
-                    if pv0 <= pv3 and v0 > v3
-                        array.push(cr_labels, label.new(j, v0, text="↓", style=label.style_label_down, color=color.new(color.red, 20), textcolor=color.white, size=size.small))
-                    else if pv0 >= pv3 and v0 < v3
-                        array.push(cr_labels, label.new(j, v0, text="↑", style=label.style_label_up, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
-                if not na(v4) and not na(pv4) and pv0 != pv4
-                    if pv0 <= pv4 and v0 > v4
-                        array.push(cr_labels, label.new(j, v0, text="↓", style=label.style_label_down, color=color.new(color.red, 20), textcolor=color.white, size=size.small))
-                    else if pv0 >= pv4 and v0 < v4
-                        array.push(cr_labels, label.new(j, v0, text="↑", style=label.style_label_up, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
-                if not na(v5) and not na(pv5) and pv0 != pv5
-                    if pv0 <= pv5 and v0 > v5
-                        array.push(cr_labels, label.new(j, v0, text="↓", style=label.style_label_down, color=color.new(color.red, 20), textcolor=color.white, size=size.small))
-                    else if pv0 >= pv5 and v0 < v5
-                        array.push(cr_labels, label.new(j, v0, text="↑", style=label.style_label_up, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
-                if not na(v6) and not na(pv6) and pv0 != pv6
-                    if pv0 <= pv6 and v0 > v6
-                        array.push(cr_labels, label.new(j, v0, text="↓", style=label.style_label_down, color=color.new(color.red, 20), textcolor=color.white, size=size.small))
-                    else if pv0 >= pv6 and v0 < v6
-                        array.push(cr_labels, label.new(j, v0, text="↑", style=label.style_label_up, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
-                if not na(v7) and not na(pv7) and pv0 != pv7
-                    if pv0 <= pv7 and v0 > v7
-                        array.push(cr_labels, label.new(j, v0, text="↓", style=label.style_label_down, color=color.new(color.red, 20), textcolor=color.white, size=size.small))
-                    else if pv0 >= pv7 and v0 < v7
-                        array.push(cr_labels, label.new(j, v0, text="↑", style=label.style_label_up, color=color.new(color.green, 20), textcolor=color.white, size=size.small))
-            pv0 := v0, pv1 := v1, pv2 := v2, pv3 := v3, pv4 := v4, pv5 := v5, pv6 := v6, pv7 := v7
-
-        if array.size(pts0) > 1
-            array.push(v_pl, polyline.new(pts0, line_color=m1_c_y, line_width=filt_width))
-        if array.size(pts1) > 1
-            array.push(v_pl, polyline.new(pts1, line_color=m1_c_g, line_width=filt_width))
-        if array.size(pts2) > 1
-            array.push(v_pl, polyline.new(pts2, line_color=m1_c_g, line_width=filt_width))
-        if array.size(pts3) > 1
-            array.push(v_pl, polyline.new(pts3, line_color=m1_c_g, line_width=filt_width))
-        if array.size(pts4) > 1
-            array.push(v_pl, polyline.new(pts4, line_color=m1_c_g, line_width=filt_width))
-        if array.size(pts5) > 1
-            array.push(v_pl, polyline.new(pts5, line_color=m1_c_g, line_width=filt_width))
-        if array.size(pts6) > 1
-            array.push(v_pl, polyline.new(pts6, line_color=m1_c_g, line_width=filt_width))
-        if array.size(pts7) > 1
-            array.push(v_pl, polyline.new(pts7, line_color=m1_c_g, line_width=filt_width))
+        f_draw_m1_valley_ex(v_gamma_ex_1, cur_sz_unit_ex_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels)
+        f_draw_m1_valley_ex(v_gamma_ex2_1, cur_sz_unit_ex2_v1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels)
+        f_draw_m1_valley_ex(v_gamma_ex3_1, cur_sz_unit_ex3_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels)
+        f_draw_m1_valley_ex(v_gamma_ex4_1, cur_sz_unit_ex4_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels)
+        f_draw_m1_valley_ex(v_gamma_ex5_1, cur_sz_unit_ex5_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels)
+        f_draw_m1_valley_ex(v_gamma_ex6_1, cur_sz_unit_ex6_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels)
+        f_draw_m1_valley_ex(v_gamma_ex7_1, cur_sz_unit_ex7_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels)
+        f_draw_m1_valley_ex(v_gamma_ex8_1, cur_sz_unit_ex8_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels)
+        f_draw_m1_valley_ex(v_gamma_ex9_1, cur_sz_unit_ex9_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels)
+        f_draw_m1_valley_ex(v_gamma_ex10_1, cur_sz_unit_ex10_1, m1_c_g, v0_arr_v, s_idx, st, is_allowed_tf, cr_labels)
 
     // --- DRAW ENGINE 2 ---
     if show_m2 and show_peak and not na(p_idx_u)
