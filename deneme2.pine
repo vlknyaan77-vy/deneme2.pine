@@ -1074,13 +1074,13 @@ var label lp = na, var label lv = na
 if barstate.islast
     int p_idx_label = settled_p_idx, int v_idx_label = settled_v_idx
     if not na(p_idx_label)
-        int h_off = math.max(0, math.min(4999, bar_index - p_idx_label))
+        int h_off = math.max(0, math.min(2999, bar_index - p_idx_label))
         if na(lp)
             lp := label.new(p_idx_label, eff_h_anc[h_off], "⚓ Tepe", color=color.red, textcolor=color.white, style=label.style_label_down)
         else
             label.set_xy(lp, p_idx_label, eff_h_anc[h_off])
     if not na(v_idx_label)
-        int v_off = math.max(0, math.min(4999, bar_index - v_idx_label))
+        int v_off = math.max(0, math.min(2999, bar_index - v_idx_label))
         if na(lv)
             lv := label.new(v_idx_label, eff_l_anc[v_off], "⚓ Dip", color=color.green, textcolor=color.white, style=label.style_label_up)
         else
