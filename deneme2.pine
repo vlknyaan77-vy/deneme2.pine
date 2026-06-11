@@ -242,6 +242,18 @@ f_m1_crossover_scanner() =>
 
     [last_p_idx, last_p_dir, float(last_p_bar), last_v_idx, last_v_dir, float(last_v_bar)]
 
+f_fill_cr_row(table t, int r, string tf_str, float idx, float dir, float b_time) =>
+    table.cell(t, 0, r, tf_str, bgcolor=color.new(color.gray, 80), text_color=color.white)
+    if idx > 0
+        // Estimate bars ago based on time difference and chart timeframe
+        b_ago = math.max(0, int(math.floor((time - int(b_time)) / (timeframe.in_seconds() * 1000))))
+        table.cell(t, 1, r, "L" + str.tostring(idx, "#"), bgcolor=color.new(color.gray, 90), text_color=color.white)
+        table.cell(t, 2, r, dir > 0 ? "↓" : "↑", bgcolor=color.new(color.gray, 90), text_color=dir > 0 ? color.red : color.green)
+        table.cell(t, 3, r, str.tostring(b_ago), bgcolor=color.new(color.gray, 90), text_color=color.white)
+    else
+        table.cell(t, 1, r, "-", bgcolor=color.new(color.gray, 90), text_color=color.gray)
+        table.cell(t, 2, r, "-", bgcolor=color.new(color.gray, 90), text_color=color.gray)
+        table.cell(t, 3, r, "-", bgcolor=color.new(color.gray, 90), text_color=color.gray)
 
 // --- HESAPLAMA AKIŞI / CALCULATION FLOW ---
 // Anchor Prices (Always Standard)
@@ -942,20 +954,6 @@ if enable_cr and barstate.islast
     table.cell(cr_tab, 1, 0, "Katman", bgcolor=c_bg, text_color=color.yellow)
     table.cell(cr_tab, 2, 0, "Yön", bgcolor=c_bg, text_color=color.yellow)
     table.cell(cr_tab, 3, 0, "Bar Önce", bgcolor=c_bg, text_color=color.yellow)
-
-    f_fill_cr_row(t, r, tf_str, idx, dir, b_time) =>
-        table.cell(t, 0, r, tf_str, bgcolor=color.new(color.gray, 80), text_color=color.white)
-        if idx > 0
-            // Estimate bars ago based on time difference and chart timeframe
-            // We use math.floor for safer estimation
-            b_ago = math.max(0, int(math.floor((time - int(b_time)) / (timeframe.in_seconds() * 1000))))
-            table.cell(t, 1, r, "L" + str.tostring(idx, "#"), bgcolor=color.new(color.gray, 90), text_color=color.white)
-            table.cell(t, 2, r, dir > 0 ? "↓" : "↑", bgcolor=color.new(color.gray, 90), text_color=dir > 0 ? color.red : color.green)
-            table.cell(t, 3, r, str.tostring(b_ago), bgcolor=color.new(color.gray, 90), text_color=color.white)
-        else
-            table.cell(t, 1, r, "-", bgcolor=color.new(color.gray, 90), text_color=color.gray)
-            table.cell(t, 2, r, "-", bgcolor=color.new(color.gray, 90), text_color=color.gray)
-            table.cell(t, 3, r, "-", bgcolor=color.new(color.gray, 90), text_color=color.gray)
 
     f_fill_cr_row(cr_tab, 1, "1m P", m1_1m_p_idx, m1_1m_p_dir, m1_1m_p_bar)
     f_fill_cr_row(cr_tab, 2, "1m V", m1_1m_v_idx, m1_1m_v_dir, m1_1m_v_bar)
