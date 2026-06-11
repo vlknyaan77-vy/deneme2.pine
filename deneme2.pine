@@ -46,7 +46,7 @@ table_pos      = input.string("Top Right", "Tablo Konumu / Table Position", opti
 
 // --- KIRILIM KONTROL GİRDİLERİ ---
 enable_cr      = input.bool(true, "Kırılım Motorunu Aktifleştir / Enable Crossover Engine", group=GRP_CR)
-show_cr_lines  = input.bool(true, "Kırılım Çizgilerini Göster / Show Crossover Lines", group=GRP_CR)
+show_cr_arrows = input.bool(true, "Kırılım Oklarını Göster / Show Crossover Arrows", group=GRP_CR)
 cr_table_pos   = input.string("Bottom Left", "Kırılım Tablo Konumu", options=["Top Right", "Bottom Right", "Top Left", "Bottom Left", "Middle Right"], group=GRP_CR)
 
 // --- YARDIMCI FONKSİYONLAR / HELPERS ---
@@ -985,15 +985,34 @@ if enable_cr and barstate.islast
     f_fill_cr_row(cr_tab, 5, "5m P", m1_5m_p_idx, m1_5m_p_dir, m1_5m_p_bar)
     f_fill_cr_row(cr_tab, 6, "5m V", m1_5m_v_idx, m1_5m_v_dir, m1_5m_v_bar)
 
-// --- CROSSOVER VISUALIZATION (LINES) ---
-if enable_cr and show_cr_lines
-    // Detect change in bar index from security results to know when a NEW crossover happened
+// --- CROSSOVER VISUALIZATION (ARROWS) ---
+bool cr_up_signal   = false
+bool cr_down_signal = false
+
+if enable_cr and show_cr_arrows
+    // Inverted strategy logic requested:
+    // dir > 0 (crossing up) -> down arrow
+    // dir < 0 (crossing down) -> up arrow
+
     new_1m_p = ta.change(m1_1m_p_bar) != 0, new_1m_v = ta.change(m1_1m_v_bar) != 0
     new_3m_p = ta.change(m1_3m_p_bar) != 0, new_3m_v = ta.change(m1_3m_v_bar) != 0
     new_5m_p = ta.change(m1_5m_p_bar) != 0, new_5m_v = ta.change(m1_5m_v_bar) != 0
 
-    if new_1m_p or new_1m_v or new_3m_p or new_3m_v or new_5m_p or new_5m_v
-        line.new(bar_index, low, bar_index, high, extend=extend.both, color=color.new(color.white, 50), style=line.style_dashed)
+    if new_1m_p
+        if m1_1m_p_dir > 0 then cr_down_signal := true else cr_up_signal := true
+    if new_1m_v
+        if m1_1m_v_dir > 0 then cr_down_signal := true else cr_up_signal := true
+    if new_3m_p
+        if m1_3m_p_dir > 0 then cr_down_signal := true else cr_up_signal := true
+    if new_3m_v
+        if m1_3m_v_dir > 0 then cr_down_signal := true else cr_up_signal := true
+    if new_5m_p
+        if m1_5m_p_dir > 0 then cr_down_signal := true else cr_up_signal := true
+    if new_5m_v
+        if m1_5m_v_dir > 0 then cr_down_signal := true else cr_up_signal := true
+
+plotshape(cr_up_signal, "Kırılım Yukarı (Dip)", shape.triangleup, location.belowbar, color.green, size=size.small)
+plotshape(cr_down_signal, "Kırılım Aşağı (Tepe)", shape.triangledown, location.abovebar, color.red, size=size.small)
 
 // Labels (Shared)
 var label lp = na, var label lv = na
